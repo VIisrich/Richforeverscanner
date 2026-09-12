@@ -9,7 +9,7 @@ from PIL import Image
 # CONFIGURATION & JSONBIN BRIDGE SETUP
 # ==============================================================================
 JSONBIN_BIN_ID = "6aa51966ffd5d16053fd7e2f"
-JSONBIN_MASTER_KEY = "$2a$10$Y3Fbf1v.CPDuR99om8LN6Oxw4ZScyw0dD7aAk0KdZaSRaComfQe4a."
+JSONBIN_MASTER_KEY = "$2a$10$V..urr.HG8zrlXI7byY/veOBjNWADGHWbJsfbEB3HfLmoaiGJ74xi"
 JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
 
 st.set_page_config(
