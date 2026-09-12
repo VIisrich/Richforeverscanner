@@ -100,7 +100,7 @@ if mode == "Single-Shot Analysis":
             with st.spinner("Analyzing market structure and liquidity..."):
                 try:
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-3.6-flash',
                         contents=[image, f"{ICT_PROMPT}\n\nUser Question: {user_query}"]
                     )
                     st.markdown("### 📊 Scan Results")
@@ -127,7 +127,7 @@ elif mode == "Multi-Timeframe Confluence":
                         content_payload.append(Image.open(f))
                         
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-3.6-flash',
                         contents=content_payload
                     )
                     st.markdown("### 🌐 Confluence Breakdown")
