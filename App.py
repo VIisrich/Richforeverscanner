@@ -18,7 +18,7 @@ JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
 
 st.set_page_config(
     page_title="RichforeverAI",
-    page_icon="⚡",
+    page_icon="logo.png",
     layout="centered"
 )
 
@@ -31,7 +31,7 @@ st.markdown("""
     /* Futuristic Card Container */
     .bot-card {
         background: linear-gradient(145deg, #161b22, #0d1117);
-        border: 1px. solid #30363d;
+        border: 1px solid #30363d;
         border-radius: 16px;
         padding: 20px;
         text-align: center;
@@ -221,14 +221,12 @@ else:
     open_count = telemetry.get("open_trades_count", 0)
     open_trades = telemetry.get("open_trades", [])
 
-    # Card Container matching the screenshot layout style
     st.markdown("""
         <div class="bot-card">
             <div style="font-size: 40px; margin-bottom: 5px;">⚡🤖</div>
             <div class="bot-title">RICHFOREVER_ICT.PRO V.03</div>
     """, unsafe_allow_html=True)
 
-    # Status indicator badge inside card
     if pc_online:
         st.markdown("<p style='color: #00ff66; font-size: 14px; font-weight: bold;'>● PC STATUS: CONNECTED</p>", unsafe_allow_html=True)
     else:
@@ -236,7 +234,6 @@ else:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Quick Metrics Card
     st.markdown(f"""
         <div class="metric-container">
             <div style="display: flex; justify-content: space-between; color: #aaa; font-size: 13px;">
@@ -247,7 +244,6 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-    # Engine Action Controls (Pause / Resume)
     if pc_online:
         if bot_active:
             if st.button("🔴 PAUSE EXECUTION ENGINE"):
