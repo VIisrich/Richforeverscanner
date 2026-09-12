@@ -168,9 +168,22 @@ else:
             st.image(Image.open(f), caption=f.name, use_container_width=True)
             
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Correlating multi-timeframe structure..."):
+            with st.spinner("Blending multi-timeframe narrative..."):
                 try:
-                    content_payload = [ICT_PROMPT, "Analyze these charts for top-down confluence:"]
+                    prompt = """
+                    You are the RichforeverAI Vision Engine using ICT concepts. 
+                    You are given multiple charts for the same asset across different timeframes (e.g., Higher Timeframe H1/15m macro bias combined with lower timeframe 5m entry).
+                    Synthesize them together into a unified analysis. Keep your answer ultra-short and zero fluff.
+                    Format your response strictly like this:
+                    - **Timeframe/Context**: [Multi-TF H1 + 5m Fusion]
+                    - **Bias**: [Bullish / Bearish]
+                    - **Zone**: [Discount / Premium / FVG Level]
+                    - **Verdict**: [TAKE TRADE / WAIT / NO SETUP]
+                    - **Entry / SL / TP**: [Exact price levels if TAKE TRADE, else N/A]
+                    - **Quick Note**: [One sentence maximum reason blending both timeframes]
+                    """
+                    
+                    content_payload = [prompt]
                     for f in uploaded_files:
                         content_payload.append(Image.open(f))
                     
