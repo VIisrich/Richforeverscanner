@@ -224,7 +224,7 @@ else:
     st.markdown("""
         <div class="bot-card">
             <div style="font-size: 40px; margin-bottom: 5px;">⚡🤖</div>
-            <div class="bot-title">RICHFOREVER_ICT.PRO V.03</div>
+            <div class="bot-title">RichforeverAI</div>
     """, unsafe_allow_html=True)
 
     if pc_online:
@@ -254,7 +254,7 @@ else:
                 set_bot_status(True)
                 st.rerun()
     else:
-        st.info("Start `RichforeverAI.py` on your PC to enable remote control buttons.")
+        st.info("Start your local engine script on your PC to enable remote start/pause control buttons.")
 
     st.markdown("---")
     st.subheader("📋 Active Positions Monitor")
