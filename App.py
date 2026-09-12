@@ -128,7 +128,7 @@ def set_bot_status(status: bool):
 # SIDEBAR NAVIGATION
 # ==============================================================================
 st.sidebar.title("⚡ Navigation")
-app_mode = st.sidebar.selectbox("Select Page", ["RichforeverScanner", "Richforever"])
+app_mode = st.sidebar.selectbox("Select Page", ["RichforeverScanner", "RichforeverAI"])
 
 ICT_PROMPT = """
 You are an expert ICT (Inner Circle Trader) mentor and price action analyst. 
@@ -210,7 +210,7 @@ if app_mode == "RichforeverScanner":
                         st.error(f"Confluence Error: {e}")
 
 # ==============================================================================
-# PAGE 2: RICHFOREVER (Live Bot Telemetry Card UI)
+# PAGE 2: RICHFOREVERAI (Live Bot Telemetry Card UI)
 # ==============================================================================
 else:
     telemetry = get_bot_telemetry()
@@ -244,17 +244,15 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-    if pc_online:
-        if bot_active:
-            if st.button("🔴 PAUSE EXECUTION ENGINE"):
-                set_bot_status(False)
-                st.rerun()
-        else:
-            if st.button("🟢 RESUME EXECUTION ENGINE"):
-                set_bot_status(True)
-                st.rerun()
+    # Buttons are now fully accessible directly from the cloud UI at all times
+    if bot_active:
+        if st.button("🔴 PAUSE EXECUTION ENGINE"):
+            set_bot_status(False)
+            st.rerun()
     else:
-        st.info("Start your local engine script on your PC to enable remote start/pause control buttons.")
+        if st.button("🟢 RESUME EXECUTION ENGINE"):
+            set_bot_status(True)
+            st.rerun()
 
     st.markdown("---")
     st.subheader("📋 Active Positions Monitor")
