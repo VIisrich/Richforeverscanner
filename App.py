@@ -244,6 +244,7 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
+    # Buttons are now fully accessible directly from the cloud UI at all times
     if bot_active:
         if st.button("🔴 PAUSE EXECUTION ENGINE"):
             set_bot_status(False)
