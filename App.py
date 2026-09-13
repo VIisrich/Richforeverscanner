@@ -1,4 +1,5 @@
 import os
+import json
 import streamlit as st
 import requests
 from datetime import datetime, timedelta
@@ -6,11 +7,10 @@ from google import genai
 from PIL import Image
 
 # ==============================================================================
-# CONFIG & SECRETS
+# CONFIG & SECRETS (UPSTASH REDIS)
 # ==============================================================================
-JSONBIN_BIN_ID = "6aa51966ffd5d16053fd7e2f"
-JSONBIN_MASTER_KEY = "$2a$10$V..urr.HG8zrlXI7byY/veOBjNWADGHWbJsfbEB3HfLmoaiGJ74xi"
-JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
+UPSTASH_URL = st.secrets.get("UPSTASH_REDIS_REST_URL", os.getenv("UPSTASH_REDIS_REST_URL", "https://new-quetzal-130463.upstash.io"))
+UPSTASH_TOKEN = st.secrets.get("UPSTASH_REDIS_REST_TOKEN", os.getenv("UPSTASH_REDIS_REST_TOKEN", "gQAAAAAAAf2fAAIgcDJlM2UwZjZiZmI5NWU0OGM2ODlkY2JlMDEzNmRiMzZkOQ"))
 
 st.set_page_config(
     page_title="RichforeverAI",
@@ -150,17 +150,23 @@ st.markdown("""
 gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 
 # ==============================================================================
-# TELEMETRY HELPERS
+# TELEMETRY HELPERS (UPSTASH REDIS)
 # ==============================================================================
 def get_bot_telemetry() -> dict:
     try:
-        r = requests.get(
-            f"{JSONBIN_URL}/latest",
-            headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"},
+        r = requests.post(
+            UPSTASH_URL,
+            json=["GET", "bot_telemetry"],
+            headers={"Authorization": f"Bearer {UPSTASH_TOKEN}"},
             timeout=8
         )
         if r.status_code == 200:
-            record = r.json().get("record", {})
+            res = r.json().get("result")
+            if res:
+                record = json.loads(res) if isinstance(res, str) else res
+            else:
+                record = {}
+
             heartbeat_str = record.get("last_heartbeat")
             if heartbeat_str:
                 try:
@@ -181,7 +187,12 @@ def set_bot_status(status: bool):
     try:
         current = get_bot_telemetry()
         current["bot_active"] = status
-        requests.put(JSONBIN_URL, json=current, headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"}, timeout=8)
+        requests.post(
+            UPSTASH_URL,
+            json=["SET", "bot_telemetry", json.dumps(current)],
+            headers={"Authorization": f"Bearer {UPSTASH_TOKEN}"},
+            timeout=8
+        )
     except Exception as e:
         st.error(f"Failed to update engine state: {e}")
 
