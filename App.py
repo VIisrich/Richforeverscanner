@@ -231,7 +231,8 @@ Analyze the provided trading chart image using ICT concepts:
 1. **Market Structure**: Identify BOS, CHoCH, and trend direction.
 2. **Liquidity**: Pinpoint external/internal range liquidity sweeps.
 3. **Imbalances**: Locate Fair Value Gaps (FVG) or Order Blocks.
-4. **Verdict**: Give a clean, zero-fluff directional bias and setup evaluation.
+4. **Confidence Level**: Provide a setup confidence rating (e.g., High, Medium, Low or percentage).
+5. **Verdict**: Give a clean, zero-fluff directional bias and setup evaluation.
 """
 
 # ==============================================================================
@@ -248,11 +249,11 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload one chart screenshot for a fast ICT read: market structure, liquidity sweeps, FVGs, and a directional bias verdict.</p>
+            <p>Upload one chart screenshot for a fast ICT read: market structure, liquidity sweeps, FVGs, confidence level, and a directional bias verdict.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Blend a Higher Timeframe (H1) macro bias with a lower timeframe (5m) entry chart into one fused, zero-fluff verdict.</p>
+            <p>Blend a Higher Timeframe (H1) macro bias with a lower timeframe (5m) entry chart into one fused, zero-fluff verdict with a confidence rating.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -329,6 +330,7 @@ elif page == "Multi-Timeframe Confluence":
                     - **Timeframe/Context**: [Multi-TF H1 + 5m Fusion]
                     - **Bias**: [Bullish / Bearish]
                     - **Zone**: [Discount / Premium / FVG Level]
+                    - **Confidence Level**: [High / Medium / Low or Percentage]
                     - **Verdict**: [TAKE TRADE / WAIT / NO SETUP]
                     - **Entry / SL / TP**: [Exact price levels if TAKE TRADE, else N/A]
                     - **Quick Note**: [One sentence maximum reason blending both timeframes]
