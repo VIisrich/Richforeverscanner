@@ -20,9 +20,14 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# GLOBAL STYLE
+# GLOBAL STYLE & IOS APP ICON INJECTION
 # ==============================================================================
 st.markdown("""
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RichforeverAI">
+
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
 
