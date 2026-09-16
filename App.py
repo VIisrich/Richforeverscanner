@@ -1,5 +1,4 @@
 import os
-import json
 import streamlit as st
 import requests
 from datetime import datetime, timedelta
@@ -7,10 +6,11 @@ from google import genai
 from PIL import Image
 
 # ==============================================================================
-# CONFIG & SECRETS (UPSTASH REDIS)
+# CONFIG & SECRETS
 # ==============================================================================
-UPSTASH_URL = st.secrets.get("UPSTASH_REDIS_REST_URL", os.getenv("UPSTASH_REDIS_REST_URL", "https://new-quetzal-130463.upstash.io"))
-UPSTASH_TOKEN = st.secrets.get("UPSTASH_REDIS_REST_TOKEN", os.getenv("UPSTASH_REDIS_REST_TOKEN", "gQAAAAAAAf2fAAIgcDJlM2UwZjZiZmI5NWU0OGM2ODlkY2JlMDEzNmRiMzZkOQ"))
+JSONBIN_BIN_ID = "6aa51966ffd5d16053fd7e2f"
+JSONBIN_MASTER_KEY = "$2a$10$V..urr.HG8zrlXI7byY/veOBjNWADGHWbJsfbEB3HfLmoaiGJ74xi"
+JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
 
 st.set_page_config(
     page_title="RichforeverAI",
@@ -150,23 +150,17 @@ st.markdown("""
 gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 
 # ==============================================================================
-# TELEMETRY HELPERS (UPSTASH REDIS)
+# TELEMETRY HELPERS
 # ==============================================================================
 def get_bot_telemetry() -> dict:
     try:
-        r = requests.post(
-            UPSTASH_URL,
-            json=["GET", "bot_telemetry"],
-            headers={"Authorization": f"Bearer {UPSTASH_TOKEN}"},
+        r = requests.get(
+            f"{JSONBIN_URL}/latest",
+            headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"},
             timeout=8
         )
         if r.status_code == 200:
-            res = r.json().get("result")
-            if res:
-                record = json.loads(res) if isinstance(res, str) else res
-            else:
-                record = {}
-
+            record = r.json().get("record", {})
             heartbeat_str = record.get("last_heartbeat")
             if heartbeat_str:
                 try:
@@ -187,12 +181,7 @@ def set_bot_status(status: bool):
     try:
         current = get_bot_telemetry()
         current["bot_active"] = status
-        requests.post(
-            UPSTASH_URL,
-            json=["SET", "bot_telemetry", json.dumps(current)],
-            headers={"Authorization": f"Bearer {UPSTASH_TOKEN}"},
-            timeout=8
-        )
+        requests.put(JSONBIN_URL, json=current, headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"}, timeout=8)
     except Exception as e:
         st.error(f"Failed to update engine state: {e}")
 
@@ -339,17 +328,22 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Blending multi-timeframe narrative..."):
                 try:
                     prompt = """
-                    You are the RichforeverAI Vision Engine using ICT concepts.
-                    You are given multiple charts for the same asset across different timeframes (e.g., Higher Timeframe H1/15m macro bias combined with lower timeframe 5m entry).
-                    Synthesize them together into a unified analysis. Keep your answer ultra-short and zero fluff.
+                    You are the RichforeverAI Vision Engine using the exact algorithmic ICT rules from the live execution bot.
+                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using these strict rules:
+                    1. **H1 Macro Bias**: Verify if price action is aligned with the 20 EMA trend direction and momentum.
+                    2. **15m Equilibrium Filter**: For Buys, price must be in the Discount zone (below the 15m range midpoint). For Sells, price must be in the Premium zone (above the midpoint).
+                    3. **5m FVG Retracement**: Price must be pulling back into an active Fair Value Gap zone.
+                    4. **Dynamic R:R**: Verify that the setup allows for a minimum 2.0 R:R target reaching higher timeframe liquidity pools or opposing FVGs.
+                    
                     Format your response strictly like this:
-                    - **Timeframe/Context**: [Multi-TF H1 + 5m Fusion]
-                    - **Bias**: [Bullish / Bearish]
-                    - **Zone**: [Discount / Premium / FVG Level]
-                    - **Confidence Level**: [High / Medium / Low or Percentage]
+                    - **Timeframe/Context**: [Multi-TF H1 + 15m + 5m Bot Alignment]
+                    - **H1 Bias**: [Bullish / Bearish]
+                    - **15m Equilibrium Zone**: [Discount / Premium]
+                    - **5m FVG Status**: [Retracing to FVG / No Setup]
+                    - **Confidence Level**: [High / Medium / Low]
                     - **Verdict**: [TAKE TRADE / WAIT / NO SETUP]
-                    - **Entry / SL / TP**: [Exact price levels if TAKE TRADE, else N/A]
-                    - **Quick Note**: [One sentence maximum reason blending both timeframes]
+                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A]
+                    - **Quick Note**: [One sentence maximum reason matching the bot's execution engine rules]
                     """
 
                     content_payload = [prompt]
