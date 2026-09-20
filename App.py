@@ -342,7 +342,7 @@ elif page == "Multi-Timeframe Confluence":
                     - **5m FVG Status**: [Retracing to FVG / No Setup]
                     - **Confidence Level**: [High / Medium / Low]
                     - **Verdict**: [TAKE TRADE / WAIT / NO SETUP]
-                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A]
+                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A][also add sl and tp]
                     - **Quick Note**: [One sentence maximum reason matching the bot's execution engine rules]
                     """
 
