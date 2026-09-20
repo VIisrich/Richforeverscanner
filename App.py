@@ -1,6 +1,7 @@
 import os
 import streamlit as st
 import requests
+import base64
 from datetime import datetime, timedelta
 from google import genai
 from PIL import Image
@@ -20,10 +21,20 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# GLOBAL STYLE & IOS APP ICON INJECTION
+# GLOBAL STYLE & IOS APP ICON INJECTION (BASE64 EMBEDDED)
 # ==============================================================================
-st.markdown("""
-    <link rel="apple-touch-icon" href="logo.png">
+def get_base64_image(image_path: str) -> str:
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            encoded = base64.b64encode(img_file.read()).decode()
+            return f"data:image/png;base64,{encoded}"
+    return ""
+
+icon_data_uri = get_base64_image("logo.png")
+
+st.markdown(f"""
+    <link rel="apple-touch-icon" href="{icon_data_uri}">
+    <link rel="apple-touch-icon-precomposed" href="{icon_data_uri}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RichforeverAI">
@@ -31,23 +42,23 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
 
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    html, body, [class*="css"] {{ font-family: 'Inter', sans-serif; }}
 
-    .stApp {
+    .stApp {{
         background: radial-gradient(circle at 15% 0%, #1a1030 0%, #0b0c14 45%, #08090f 100%);
         color: #eef0f6;
-    }
+    }}
 
     /* Hero header */
-    .rf-hero {
+    .rf-hero {{
         text-align: center;
         padding: 1.4rem 1rem 1.6rem 1rem;
         margin-bottom: 1.2rem;
         border-radius: 18px;
         background: linear-gradient(135deg, rgba(255,51,51,0.14), rgba(122,60,255,0.14));
         border: 1px solid rgba(255,255,255,0.07);
-    }
-    .rf-hero h1 {
+    }}
+    .rf-hero h1 {{
         font-size: 2.1rem;
         font-weight: 800;
         letter-spacing: 0.5px;
@@ -55,19 +66,19 @@ st.markdown("""
         background: linear-gradient(90deg, #ff5b5b, #ff9d5c 45%, #a06bff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-    }
-    .rf-hero p {
+    }}
+    .rf-hero p {{
         margin: 0.35rem 0 0 0;
         color: #9a9fb5;
         font-size: 0.92rem;
         letter-spacing: 0.3px;
-    }
+    }}
 
     /* Section headers inside pages */
-    h2, h3 { color: #f3f4fa !important; font-weight: 700 !important; }
+    h2, h3 {{ color: #f3f4fa !important; font-weight: 700 !important; }}
 
     /* Buttons */
-    .stButton>button {
+    .stButton>button {{
         width: 100%;
         background: linear-gradient(135deg, #ff3b3b, #ff6a3d);
         color: white;
@@ -78,46 +89,46 @@ st.markdown("""
         padding: 0.65rem 0;
         transition: transform 0.12s ease, box-shadow 0.12s ease;
         box-shadow: 0 4px 14px rgba(255, 59, 59, 0.25);
-    }
-    .stButton>button:hover {
+    }}
+    .stButton>button:hover {{
         transform: translateY(-1px);
         box-shadow: 0 6px 18px rgba(255, 59, 59, 0.35);
-    }
+    }}
 
     /* Cards */
-    .rf-card {
+    .rf-card {{
         background: rgba(255,255,255,0.035);
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 14px;
         padding: 1.1rem 1.2rem;
         margin-bottom: 0.9rem;
-    }
-    .rf-card h4 {
+    }}
+    .rf-card h4 {{
         margin: 0 0 0.4rem 0;
         font-size: 1rem;
         color: #ff9d5c;
-    }
-    .rf-card p { margin: 0; color: #c4c8da; font-size: 0.92rem; line-height: 1.5; }
+    }}
+    .rf-card p {{ margin: 0; color: #c4c8da; font-size: 0.92rem; line-height: 1.5; }}
 
     /* Sidebar */
-    section[data-testid="stSidebar"] {
+    section[data-testid="stSidebar"] {{
         background: linear-gradient(180deg, #12101c 0%, #0b0c14 100%);
         border-right: 1px solid rgba(255,255,255,0.06);
-    }
-    .rf-sidebar-brand {
+    }}
+    .rf-sidebar-brand {{
         text-align: center;
         padding: 0.6rem 0 1rem 0;
-    }
-    .rf-sidebar-brand span {
+    }}
+    .rf-sidebar-brand span {{
         font-weight: 800;
         font-size: 1.15rem;
         background: linear-gradient(90deg, #ff5b5b, #a06bff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-    }
+    }}
 
     /* Status pill */
-    .rf-pill {
+    .rf-pill {{
         display: inline-block;
         width: 100%;
         text-align: center;
@@ -127,23 +138,23 @@ st.markdown("""
         font-size: 0.82rem;
         letter-spacing: 0.4px;
         margin-bottom: 0.6rem;
-    }
-    .rf-pill-online { background: rgba(46, 204, 113, 0.14); color: #4fe08a; border: 1px solid rgba(46,204,113,0.35); }
-    .rf-pill-offline { background: rgba(255, 71, 87, 0.14); color: #ff6b7a; border: 1px solid rgba(255,71,87,0.35); }
-    .rf-pill-active { background: rgba(46, 204, 113, 0.14); color: #4fe08a; border: 1px solid rgba(46,204,113,0.35); }
-    .rf-pill-paused { background: rgba(255, 183, 3, 0.14); color: #ffcf5c; border: 1px solid rgba(255,183,3,0.35); }
+    }}
+    .rf-pill-online {{ background: rgba(46, 204, 113, 0.14); color: #4fe08a; border: 1px solid rgba(46,204,113,0.35); }}
+    .rf-pill-offline {{ background: rgba(255, 71, 87, 0.14); color: #ff6b7a; border: 1px solid rgba(255,71,87,0.35); }}
+    .rf-pill-active {{ background: rgba(46, 204, 113, 0.14); color: #4fe08a; border: 1px solid rgba(46,204,113,0.35); }}
+    .rf-pill-paused {{ background: rgba(255, 183, 3, 0.14); color: #ffcf5c; border: 1px solid rgba(255,183,3,0.35); }}
 
-    div[data-testid="stMetric"] {
+    div[data-testid="stMetric"] {{
         background: rgba(255,255,255,0.035);
         border: 1px solid rgba(255,255,255,0.07);
         border-radius: 10px;
         padding: 0.5rem 0.7rem;
         margin-bottom: 0.4rem;
-    }
+    }}
 
-    hr { border-color: rgba(255,255,255,0.08) !important; }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-thumb { background: #3a2a55; border-radius: 8px; }
+    hr {{ border-color: rgba(255,255,255,0.08) !important; }}
+    ::-webkit-scrollbar {{ width: 8px; }}
+    ::-webkit-scrollbar-thumb {{ background: #3a2a55; border-radius: 8px; }}
     </style>
 """, unsafe_allow_html=True)
 
