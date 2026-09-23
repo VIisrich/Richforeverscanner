@@ -404,7 +404,7 @@ elif page == "Multi-Timeframe Confluence":
                     - **15m Equilibrium Zone**: [Discount / Premium]
                     - **5m FVG Status**: [Retracing to FVG / No Setup]
                     - **Confidence Level**: [High / Medium / Low]
-                    - **Verdict**: [TAGrade / WAIT / NO SETUP]
+                    - **Verdict**: [ Enter trade / WAIT / NO SETUP]
                     - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A][ also add tp and sl]
                     - **Quick Note**: [One sentence maximum reason]
                     """
