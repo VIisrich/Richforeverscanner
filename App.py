@@ -160,37 +160,100 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_API_KEY", ""))
 
 # ==============================================================================
-# FAST OPTIMIZED MULTI-MODEL FALLBACK WRAPPER
+# MULTI-PROVIDER VISION WRAPPER (Claude primary, Gemini fallback)
 # ==============================================================================
-def safe_generate_content(client, contents: list, max_retries: int = 5):
-    """Rotates through Flash models with real exponential backoff, and tells overload
+# Gemini's 503 "high demand" errors have been persistent for a week+ (this is a
+# widely-reported, ongoing issue on Google's side, not something client-side
+# retries alone fix: https://discuss.ai.google.dev has many open threads on it).
+# Claude Sonnet 5 supports vision and is used as the primary engine here, with
+# Gemini kept only as an automatic fallback if Claude is unavailable or unset.
+
+import io
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
+
+
+def _pil_to_b64_png(img):
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+def _claude_generate(images: list, prompt: str, max_retries: int = 4):
+    """Calls Claude Sonnet 5 vision with retry/backoff on overload (529) or rate limit (429)."""
+    if not anthropic_key or anthropic is None:
+        raise RuntimeError("Claude not configured")
+
+    client = anthropic.Anthropic(api_key=anthropic_key)
+    content = [
+        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": _pil_to_b64_png(img)}}
+        for img in images
+    ]
+    content.append({"type": "text", "text": prompt})
+
+    last_err = None
+    for attempt in range(max_retries):
+        try:
+            resp = client.messages.create(
+                model="claude-sonnet-5",
+                max_tokens=1500,
+                messages=[{"role": "user", "content": content}],
+            )
+            return "".join(block.text for block in resp.content if block.type == "text")
+        except Exception as e:
+            last_err = e
+            err_str = str(e)
+            print(f"[CLAUDE FAIL] attempt={attempt} error={err_str}")
+            if "429" in err_str or "rate_limit" in err_str.lower():
+                st.toast("Claude rate limit hit, backing off...", icon="⏳")
+                wait = min(4 * (attempt + 1), 30)
+            elif "529" in err_str or "overloaded" in err_str.lower():
+                st.toast("Claude overloaded, retrying...", icon="⚡")
+                wait = min(2 ** attempt, 20)
+            else:
+                raise e
+            if attempt < max_retries - 1:
+                time.sleep(wait)
+                continue
+            raise e
+    raise last_err
+
+
+def _gemini_generate(images: list, prompt: str, max_retries: int = 5):
+    """Rotates through Gemini Flash models with real exponential backoff, and tells overload
     (503) apart from rate-limit/quota (429) so each gets the right kind of wait."""
+    if not gemini_key:
+        raise RuntimeError("Gemini not configured")
+
+    client = genai.Client(api_key=gemini_key)
     # Newest model last: it's the most in-demand right now, so give the more
     # mature/less-congested models first crack at the request.
     models_pool = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.8-flash"]
+    contents = images + [prompt]
 
     last_err = None
     for attempt in range(max_retries):
         current_model = models_pool[attempt % len(models_pool)]
         try:
-            return client.models.generate_content(model=current_model, contents=contents)
+            resp = client.models.generate_content(model=current_model, contents=contents)
+            return resp.text
         except Exception as e:
             last_err = e
             err_str = str(e)
-            print(f"[SCAN FAIL] model={current_model} attempt={attempt} error={err_str}")
+            print(f"[GEMINI FAIL] model={current_model} attempt={attempt} error={err_str}")
 
             if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                # Per-minute quota exhausted — short backoff won't clear this,
-                # needs to wait out the rate-limit window.
                 st.toast(f"Rate limit hit on {current_model}, backing off...", icon="⏳")
                 wait = min(4 * (attempt + 1), 30)
             elif "503" in err_str or "UNAVAILABLE" in err_str or "timeout" in err_str.lower():
                 st.toast(f"{current_model} overloaded, retrying...", icon="⚡")
                 wait = min(2 ** attempt, 20)
             else:
-                # Not a retryable error (bad request, auth, etc.) — fail fast.
                 raise e
 
             if attempt < max_retries - 1:
@@ -198,7 +261,32 @@ def safe_generate_content(client, contents: list, max_retries: int = 5):
                 continue
             raise e
 
-    raise last_err or Exception("All endpoints are currently busy. Please try again.")
+    raise last_err or Exception("All Gemini endpoints are currently busy. Please try again.")
+
+
+def analyze_chart(images: list, prompt: str) -> str:
+    """Tries Claude first (primary), automatically falls back to Gemini if Claude
+    is unset or fails after its own retries. Raises the last error if both fail."""
+    errors = []
+    if anthropic_key and anthropic is not None:
+        try:
+            st.toast("Analyzing with Claude...", icon="🧠")
+            return _claude_generate(images, prompt)
+        except Exception as e:
+            errors.append(f"Claude: {e}")
+
+    if gemini_key:
+        try:
+            st.toast("Analyzing with Gemini...", icon="⚡")
+            return _gemini_generate(images, prompt)
+        except Exception as e:
+            errors.append(f"Gemini: {e}")
+
+    if not errors:
+        raise RuntimeError("No vision provider configured — set ANTHROPIC_API_KEY and/or GEMINI_API_KEY.")
+    raise RuntimeError(" | ".join(errors))
+
+
 
 def load_and_optimize_image(uploaded_file):
     """Resizes uploaded images to prevent payload bottlenecks and hanging."""
@@ -332,11 +420,10 @@ elif page == "Single-Shot Analysis":
         </div>
     """, unsafe_allow_html=True)
 
-    if not gemini_key:
-        st.error("⚠️ GEMINI_API_KEY not found in secrets or environment.")
+    if not gemini_key and not anthropic_key:
+        st.error("⚠️ No vision provider configured — set ANTHROPIC_API_KEY and/or GEMINI_API_KEY in secrets.")
         st.stop()
 
-    client = genai.Client(api_key=gemini_key)
     uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
@@ -347,19 +434,19 @@ elif page == "Single-Shot Analysis":
         if st.button("RUN PIXEL SCAN"):
             with st.spinner("Executing fast scan..."):
                 try:
-                    response = safe_generate_content(
-                        client=client,
-                        contents=[image, f"{ICT_PROMPT}\n\nUser Question: {user_query}"]
+                    result_text = analyze_chart(
+                        images=[image],
+                        prompt=f"{ICT_PROMPT}\n\nUser Question: {user_query}"
                     )
                     st.markdown("### 📊 Scan Report")
                     st.success("Scan complete")
-                    st.markdown(response.text)
+                    st.markdown(result_text)
                 except Exception as e:
                     err_str = str(e)
-                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                        st.error("⚠️ You've hit the Gemini API rate limit (too many scans too fast). Wait a minute and try again — or upgrade your API key's tier for higher limits.")
-                    elif "503" in err_str or "UNAVAILABLE" in err_str:
-                        st.error("⚠️ Google's Gemini servers are overloaded right now. This is temporary — please try again shortly.")
+                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "rate_limit" in err_str.lower():
+                        st.error("⚠️ Rate limit hit on all configured providers. Wait a minute and try again — or upgrade your API key's tier for higher limits.")
+                    elif "503" in err_str or "UNAVAILABLE" in err_str or "529" in err_str or "overloaded" in err_str.lower():
+                        st.error("⚠️ Vision provider(s) overloaded right now. This is temporary — please try again shortly.")
                     else:
                         st.error(f"Analysis error: {e}")
 
@@ -374,11 +461,10 @@ elif page == "Multi-Timeframe Confluence":
         </div>
     """, unsafe_allow_html=True)
 
-    if not gemini_key:
-        st.error("⚠️ GEMINI_API_KEY not found in secrets or environment.")
+    if not gemini_key and not anthropic_key:
+        st.error("⚠️ No vision provider configured — set ANTHROPIC_API_KEY and/or GEMINI_API_KEY in secrets.")
         st.stop()
 
-    client = genai.Client(api_key=gemini_key)
     uploaded_files = st.file_uploader("Upload multiple timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
     if uploaded_files:
@@ -412,20 +498,18 @@ elif page == "Multi-Timeframe Confluence":
                     - **Quick Note**: [One sentence maximum reason]
                     """
 
-                    content_payload = [prompt] + optimized_images
-
-                    response = safe_generate_content(
-                        client=client,
-                        contents=content_payload
+                    result_text = analyze_chart(
+                        images=optimized_images,
+                        prompt=prompt
                     )
                     st.markdown("### 🌐 Confluence Report")
                     st.success("Multi-scan complete")
-                    st.markdown(response.text)
+                    st.markdown(result_text)
                 except Exception as e:
                     err_str = str(e)
-                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                        st.error("⚠️ You've hit the Gemini API rate limit (too many scans too fast). Wait a minute and try again — or upgrade your API key's tier for higher limits.")
-                    elif "503" in err_str or "UNAVAILABLE" in err_str:
-                        st.error("⚠️ Google's Gemini servers are overloaded right now. This is temporary — please try again shortly.")
+                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "rate_limit" in err_str.lower():
+                        st.error("⚠️ Rate limit hit on all configured providers. Wait a minute and try again — or upgrade your API key's tier for higher limits.")
+                    elif "503" in err_str or "UNAVAILABLE" in err_str or "529" in err_str or "overloaded" in err_str.lower():
+                        st.error("⚠️ Vision provider(s) overloaded right now. This is temporary — please try again shortly.")
                     else:
                         st.error(f"Confluence error: {e}")
