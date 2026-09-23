@@ -162,28 +162,34 @@ st.markdown(f"""
 gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 
 # ==============================================================================
-# INTELLIGENT MULTI-MODEL FALLBACK ROTATION (BYPASSES 503 BOTTLENECKS)
+# FAST OPTIMIZED MULTI-MODEL FALLBACK WRAPPER
 # ==============================================================================
-def safe_generate_content(client, contents: list, max_retries: int = 6):
-    """Rotates through different model clusters automatically if 503 occurs."""
-    models_pool = ["gemini-3.8-flash", "gemini-3.1-pro", "gemini-3.5-flash"]
-    delay = 2
+def safe_generate_content(client, contents: list, max_retries: int = 3):
+    """Rotates through optimized Flash models with instant failover and status feedback."""
+    models_pool = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"]
     
     for attempt in range(max_retries):
         current_model = models_pool[attempt % len(models_pool)]
+        st.toast(f"Connecting to engine: {current_model}...", icon="⚡")
         try:
             return client.models.generate_content(model=current_model, contents=contents)
         except Exception as e:
             err_str = str(e)
-            is_overloaded = "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str
+            is_overloaded = "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "timeout" in err_str.lower()
             if is_overloaded and attempt < max_retries - 1:
-                time.sleep(delay)
-                delay *= 1.5
+                time.sleep(1.5)
+                continue
             else:
                 if attempt == max_retries - 1:
                     raise e
                 continue
-    raise Exception("All backup model endpoints are currently experiencing high demand.")
+    raise Exception("All endpoints are currently busy. Please try again.")
+
+def load_and_optimize_image(uploaded_file):
+    """Resizes uploaded images to prevent payload bottlenecks and hanging."""
+    img = Image.open(uploaded_file)
+    img.thumbnail((1400, 1400))
+    return img
 
 # ==============================================================================
 # TELEMETRY HELPERS
@@ -193,7 +199,7 @@ def get_bot_telemetry() -> dict:
         r = requests.get(
             f"{JSONBIN_URL}/latest",
             headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"},
-            timeout=8
+            timeout=5
         )
         if r.status_code == 200:
             record = r.json().get("record", {})
@@ -207,17 +213,15 @@ def get_bot_telemetry() -> dict:
             else:
                 record["pc_online"] = False
             return record
-        else:
-            st.sidebar.caption(f"⚠️ Telemetry fetch: HTTP {r.status_code}")
-    except Exception as e:
-        st.sidebar.caption(f"⚠️ Telemetry fetch failed: {e}")
+    except Exception:
+        pass
     return {"bot_active": True, "account_equity": 0.0, "account_balance": 0.0, "open_trades_count": 0, "pc_online": False}
 
 def set_bot_status(status: bool):
     try:
         current = get_bot_telemetry()
         current["bot_active"] = status
-        requests.put(JSONBIN_URL, json=current, headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"}, timeout=8)
+        requests.put(JSONBIN_URL, json=current, headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"}, timeout=5)
     except Exception as e:
         st.error(f"Failed to update engine state: {e}")
 
@@ -233,7 +237,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("🧠 Multi-Model Auto-Fallback Active")
+st.sidebar.caption("⚡ Fast Flash Multi-Model Rotation")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -245,7 +249,6 @@ open_count = telemetry.get("open_trades_count", 0)
 
 if not pc_online:
     st.sidebar.markdown("<div class='rf-pill rf-pill-offline'>PC STATUS: OFFLINE 💀</div>", unsafe_allow_html=True)
-    st.sidebar.caption("Run `RichforeverAI.py` on your PC to connect.")
 else:
     st.sidebar.markdown("<div class='rf-pill rf-pill-online'>PC STATUS: CONNECTED 🟢</div>", unsafe_allow_html=True)
     c1, c2 = st.sidebar.columns(2)
@@ -290,20 +293,18 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>🧠 Multi-Model Fallback Engine</h4>
-            <p>System automatically cycles through available model pools if a 503 bottleneck is hit.</p>
+            <h4>⚡ Ultra-Fast Flash Rotation</h4>
+            <p>Optimized with instant failover across lightweight Flash endpoints to prevent long loading delays.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload one chart screenshot for a fast ICT read: market structure, liquidity sweeps, FVGs, confidence level, and a directional bias verdict.</p>
+            <p>Upload one chart screenshot for a fast ICT read: market structure, liquidity sweeps, FVGs, confidence level, and directional bias.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Blend a Higher Timeframe (H1) macro bias with a lower timeframe (5m) entry chart into one fused, zero-fluff verdict with a confidence rating.</p>
+            <p>Blend Higher and Lower timeframe charts into a single zero-fluff verdict with strict bot execution rules.</p>
         </div>
     """, unsafe_allow_html=True)
-
-    st.caption("Use the sidebar to switch modules or pause/resume the live MT5 engine.")
 
 # ==============================================================================
 # PAGE 2: SINGLE-SHOT ANALYSIS
@@ -324,12 +325,12 @@ elif page == "Single-Shot Analysis":
     uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption="Active Chart Feed", use_container_width=True)
+        image = load_and_optimize_image(uploaded_file)
+        st.image(image, caption="Optimized Chart Feed", use_container_width=True)
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Analyzing market structure via multi-model fallback pool..."):
+            with st.spinner("Executing fast scan..."):
                 try:
                     response = safe_generate_content(
                         client=client,
@@ -361,22 +362,25 @@ elif page == "Multi-Timeframe Confluence":
 
     if uploaded_files:
         cols = st.columns(min(len(uploaded_files), 3))
+        optimized_images = []
         for i, f in enumerate(uploaded_files):
+            opt_img = load_and_optimize_image(f)
+            optimized_images.append(opt_img)
             with cols[i % len(cols)]:
-                st.image(Image.open(f), caption=f.name, use_container_width=True)
+                st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Blending multi-timeframe narrative via multi-model fallback pool..."):
+            with st.spinner("Processing multi-timeframe confluence feed..."):
                 try:
                     prompt = """
-                    You are the RichforeverAI Vision Engine using the exact algorithmic ICT rules from the live execution bot.
+                    You are the RichforeverAI Vision Engine using exact ICT rules from the live execution bot.
                     Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using these strict rules:
-                    1. **H1 Macro Bias**: Verify if price action is aligned with the 20 EMA trend direction and momentum.
-                    2. **15m Equilibrium Filter**: For Buys, price must be in the Discount zone (below the 15m range midpoint). For Sells, price must be in the Premium zone (above the midpoint).
-                    3. **5m FVG Retracement**: Price must be pulling back into an active Fair Value Gap zone.
-                    4. **Dynamic R:R**: Verify that the setup allows for a minimum 2.0 R:R target reaching higher timeframe liquidity pools or opposing FVGs.
+                    1. **H1 Macro Bias**: Verify if price action is aligned with the 20 EMA trend direction.
+                    2. **15m Equilibrium Filter**: For Buys, price must be in Discount. For Sells, price must be in Premium.
+                    3. **5m FVG Retracement**: Price pulling back into an active Fair Value Gap.
+                    4. **Dynamic R:R**: Minimum 2.0 R:R target.
                     
-                    Format your response strictly like this:
+                    Format strictly like this:
                     - **Timeframe/Context**: [Multi-TF H1 + 15m + 5m Bot Alignment]
                     - **H1 Bias**: [Bullish / Bearish]
                     - **15m Equilibrium Zone**: [Discount / Premium]
@@ -384,12 +388,10 @@ elif page == "Multi-Timeframe Confluence":
                     - **Confidence Level**: [High / Medium / Low]
                     - **Verdict**: [TAKE TRADE / WAIT / NO SETUP]
                     - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A] (Include suggested SL and TP levels)
-                    - **Quick Note**: [One sentence maximum reason matching the bot's execution engine rules]
+                    - **Quick Note**: [One sentence maximum reason]
                     """
 
-                    content_payload = [prompt]
-                    for f in uploaded_files:
-                        content_payload.append(Image.open(f))
+                    content_payload = [prompt] + optimized_images
 
                     response = safe_generate_content(
                         client=client,
