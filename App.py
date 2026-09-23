@@ -14,12 +14,6 @@ JSONBIN_BIN_ID = "6aa51966ffd5d16053fd7e2f"
 JSONBIN_MASTER_KEY = "$2a$10$V..urr.HG8zrlXI7byY/veOBjNWADGHWbJsfbEB3HfLmoaiGJ74xi"
 JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
 
-# ==============================================================================
-# MODEL CONFIGURATION (Switch models easily here)
-# ==============================================================================
-# Options: 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.1-pro'
-SELECTED_MODEL = "gemini-3.8-flash"
-
 st.set_page_config(
     page_title="RichforeverAI",
     page_icon="logo.png",
@@ -168,22 +162,28 @@ st.markdown(f"""
 gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 
 # ==============================================================================
-# ROBUST API RETRY WRAPPER (BYPASSES 503 / 429 OVERLOADS)
+# INTELLIGENT MULTI-MODEL FALLBACK ROTATION (BYPASSES 503 BOTTLENECKS)
 # ==============================================================================
-def safe_generate_content(client, model: str, contents: list, max_retries: int = 5):
-    """Retries API generation automatically with exponential backoff on 503/429 errors."""
-    delay = 3
+def safe_generate_content(client, contents: list, max_retries: int = 6):
+    """Rotates through different model clusters automatically if 503 occurs."""
+    models_pool = ["gemini-3.8-flash", "gemini-3.1-pro", "gemini-3.5-flash"]
+    delay = 2
+    
     for attempt in range(max_retries):
+        current_model = models_pool[attempt % len(models_pool)]
         try:
-            return client.models.generate_content(model=model, contents=contents)
+            return client.models.generate_content(model=current_model, contents=contents)
         except Exception as e:
             err_str = str(e)
             is_overloaded = "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str
             if is_overloaded and attempt < max_retries - 1:
                 time.sleep(delay)
-                delay *= 2
+                delay *= 1.5
             else:
-                raise e
+                if attempt == max_retries - 1:
+                    raise e
+                continue
+    raise Exception("All backup model endpoints are currently experiencing high demand.")
 
 # ==============================================================================
 # TELEMETRY HELPERS
@@ -233,7 +233,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption(f"🧠 Model: `{SELECTED_MODEL}`")
+st.sidebar.caption("🧠 Multi-Model Auto-Fallback Active")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -288,10 +288,10 @@ if page == "Home / Dashboard":
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown(f"""
+    st.markdown("""
         <div class="rf-card">
-            <h4>🧠 Active Model Engine</h4>
-            <p>Currently utilizing <code>{SELECTED_MODEL}</code> with automatic retry fallback handlers.</p>
+            <h4>🧠 Multi-Model Fallback Engine</h4>
+            <p>System automatically cycles through available model pools if a 503 bottleneck is hit.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
@@ -329,18 +329,17 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner(f"Analyzing market structure via {SELECTED_MODEL}..."):
+            with st.spinner("Analyzing market structure via multi-model fallback pool..."):
                 try:
                     response = safe_generate_content(
                         client=client,
-                        model=SELECTED_MODEL,
                         contents=[image, f"{ICT_PROMPT}\n\nUser Question: {user_query}"]
                     )
                     st.markdown("### 📊 Scan Report")
                     st.success("Scan complete")
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Analysis error after retries: {e}")
+                    st.error(f"Analysis error: {e}")
 
 # ==============================================================================
 # PAGE 3: MULTI-TIMEFRAME CONFLUENCE
@@ -367,9 +366,9 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(Image.open(f), caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner(f"Blending multi-timeframe narrative via {SELECTED_MODEL}..."):
+            with st.spinner("Blending multi-timeframe narrative via multi-model fallback pool..."):
                 try:
-                    prompt = f"""
+                    prompt = """
                     You are the RichforeverAI Vision Engine using the exact algorithmic ICT rules from the live execution bot.
                     Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using these strict rules:
                     1. **H1 Macro Bias**: Verify if price action is aligned with the 20 EMA trend direction and momentum.
@@ -394,11 +393,10 @@ elif page == "Multi-Timeframe Confluence":
 
                     response = safe_generate_content(
                         client=client,
-                        model=SELECTED_MODEL,
                         contents=content_payload
                     )
                     st.markdown("### 🌐 Confluence Report")
                     st.success("Multi-scan complete")
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Confluence error after retries: {e}")
+                    st.error(f"Confluence error: {e}")
