@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 import requests
 import base64
@@ -161,6 +162,24 @@ st.markdown(f"""
 gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 
 # ==============================================================================
+# ROBUST API RETRY WRAPPER (BYPASSES 503 / 429 OVERLOADS)
+# ==============================================================================
+def safe_generate_content(client, model: str, contents: list, max_retries: int = 5):
+    """Retries API generation automatically with exponential backoff on 503/429 errors."""
+    delay = 3
+    for attempt in range(max_retries):
+        try:
+            return client.models.generate_content(model=model, contents=contents)
+        except Exception as e:
+            err_str = str(e)
+            is_overloaded = "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str
+            if is_overloaded and attempt < max_retries - 1:
+                time.sleep(delay)
+                delay *= 2
+            else:
+                raise e
+
+# ==============================================================================
 # TELEMETRY HELPERS
 # ==============================================================================
 def get_bot_telemetry() -> dict:
@@ -299,9 +318,10 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Analyzing market structure..."):
+            with st.spinner("Analyzing market structure (with auto-retry protection)..."):
                 try:
-                    response = client.models.generate_content(
+                    response = safe_generate_content(
+                        client=client,
                         model='gemini-3.6-flash',
                         contents=[image, f"{ICT_PROMPT}\n\nUser Question: {user_query}"]
                     )
@@ -309,7 +329,7 @@ elif page == "Single-Shot Analysis":
                     st.success("Scan complete")
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Analysis error: {e}")
+                    st.error(f"Analysis error after retries: {e}")
 
 # ==============================================================================
 # PAGE 3: MULTI-TIMEFRAME CONFLUENCE
@@ -336,7 +356,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(Image.open(f), caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Blending multi-timeframe narrative..."):
+            with st.spinner("Blending multi-timeframe narrative (with auto-retry protection)..."):
                 try:
                     prompt = """
                     You are the RichforeverAI Vision Engine using the exact algorithmic ICT rules from the live execution bot.
@@ -361,7 +381,8 @@ elif page == "Multi-Timeframe Confluence":
                     for f in uploaded_files:
                         content_payload.append(Image.open(f))
 
-                    response = client.models.generate_content(
+                    response = safe_generate_content(
+                        client=client,
                         model='gemini-3.6-flash',
                         contents=content_payload
                     )
@@ -369,4 +390,4 @@ elif page == "Multi-Timeframe Confluence":
                     st.success("Multi-scan complete")
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Confluence error: {e}")
+                    st.error(f"Confluence error after retries: {e}")
