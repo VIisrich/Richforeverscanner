@@ -172,7 +172,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# ROBUST OPENROUTER VISION ENGINE WITH FALLBACKS
+# ROBUST OPENROUTER VISION ENGINE WITH REQUIRED HEADERS
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -183,6 +183,10 @@ def analyze_chart(images: list, prompt: str) -> str:
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=openrouter_key,
+        default_headers={
+            "HTTP-Referer": "https://richforever.ai",
+            "X-Title": "RichforeverAI"
+        }
     )
 
     content_parts = []
@@ -199,35 +203,21 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    # Resilient fallback pool prioritizing OpenRouter auto-router and alternative free vision models
-    models_pool = [
-        "openrouter/free",
-        "nex-agi/nex-n2.5-mini:free",
-        "thinkingmachines/inkling:free",
-        "z-ai/glm-5.2:free"
-    ]
+    st.toast("Analyzing via OpenRouter Free Vision Router...", icon="⚡")
+    response = client.chat.completions.create(
+        model="openrouter/free",
+        messages=[
+            {
+                "role": "user",
+                "content": content_parts
+            }
+        ],
+        max_tokens=1200
+    )
+    if response and response.choices and response.choices[0].message.content:
+        return response.choices[0].message.content
 
-    last_err = None
-    for model in models_pool:
-        try:
-            st.toast(f"Analyzing via OpenRouter ({model})...", icon="⚡")
-            response = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": content_parts
-                    }
-                ],
-                max_tokens=1200
-            )
-            if response and response.choices and response.choices[0].message.content:
-                return response.choices[0].message.content
-        except Exception as e:
-            last_err = e
-            continue
-
-    raise last_err or Exception("All OpenRouter vision endpoints failed due to rate limits or capacity.")
+    raise Exception("OpenRouter vision request returned empty response.")
 
 # ==============================================================================
 # TELEMETRY HELPERS
@@ -414,7 +404,7 @@ elif page == "Multi-Timeframe Confluence":
                     - **15m Equilibrium Zone**: [Discount / Premium]
                     - **5m FVG Status**: [Retracing to FVG / No Setup]
                     - **Confidence Level**: [High / Medium / Low]
-                    - **Verdict**: [TAKE TRADE / WAIT / NO SETUP]
+                    - **Verdict**: [TAGrade / WAIT / NO SETUP]
                     - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A]
                     - **Quick Note**: [One sentence maximum reason]
                     """
