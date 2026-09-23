@@ -1,2 +1,5 @@
 streamlit
+requests
+Pillow
 google-genai
+anthropic
