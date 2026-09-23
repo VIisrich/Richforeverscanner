@@ -172,7 +172,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# RELIABLE OPENROUTER VISION ENGINE (GEMINI FLASH 1.5)
+# RELIABLE OPENROUTER VISION ENGINE (GEMINI FLASH LATEST)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -203,9 +203,9 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    st.toast("Analyzing via Gemini Flash 1.5...", icon="⚡")
+    st.toast("Analyzing via Gemini Flash Latest...", icon="⚡")
     response = client.chat.completions.create(
-        model="google/gemini-flash-1.5",
+        model="google/gemini-flash-latest",
         messages=[
             {
                 "role": "user",
@@ -265,7 +265,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("⚡ Powered by Google Gemini Flash 1.5")
+st.sidebar.caption("⚡ Powered by Gemini Flash Latest")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -321,8 +321,8 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Gemini Flash 1.5 Vision Active</h4>
-            <p>Using Google's high-speed multimodal engine via OpenRouter for instant, accurate chart analysis.</p>
+            <h4>⚡ Gemini Flash Latest Vision Active</h4>
+            <p>Using Google's active multimodal engine alias via OpenRouter for high-speed chart scans.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
