@@ -199,11 +199,12 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    # Updated fallback pool with active free vision routers and models
+    # Resilient fallback pool prioritizing OpenRouter auto-router and alternative free vision models
     models_pool = [
         "openrouter/free",
-        "google/gemma-4-31b-it:free",
-        "nex-agi/nex-n2.5-mini:free"
+        "nex-agi/nex-n2.5-mini:free",
+        "thinkingmachines/inkling:free",
+        "z-ai/glm-5.2:free"
     ]
 
     last_err = None
@@ -226,7 +227,7 @@ def analyze_chart(images: list, prompt: str) -> str:
             last_err = e
             continue
 
-    raise last_err or Exception("All OpenRouter vision endpoints failed.")
+    raise last_err or Exception("All OpenRouter vision endpoints failed due to rate limits or capacity.")
 
 # ==============================================================================
 # TELEMETRY HELPERS
