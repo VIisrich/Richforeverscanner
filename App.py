@@ -4,14 +4,13 @@ import streamlit as st
 import requests
 import base64
 from datetime import datetime, timedelta
-from google import genai
 from PIL import Image
 import io
 
 try:
-    import anthropic
+    from openai import OpenAI
 except ImportError:
-    anthropic = None
+    OpenAI = None
 
 # ==============================================================================
 # CONFIG & SECRETS
@@ -159,13 +158,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
-anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_API_KEY", ""))
-
-def _pil_to_b64_png(img):
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return base64.b64encode(buf.getvalue()).decode()
+openrouter_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
 
 def load_and_optimize_image(uploaded_file):
     """Aggressively compresses images to 900x900 to ensure lightweight payloads."""
@@ -174,65 +167,46 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# ROBUST MULTI-PROVIDER VISION ENGINE WITH LIGHTWEIGHT FALLBACKS
+# OPENROUTER FREE VISION ENGINE
 # ==============================================================================
-def _call_claude(images: list, prompt: str):
-    if not anthropic_key or anthropic is None:
-        raise RuntimeError("Claude not configured")
-    client = anthropic.Anthropic(api_key=anthropic_key)
-    content = [
-        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": _pil_to_b64_png(img)}}
-        for img in images
-    ]
-    content.append({"type": "text", "text": prompt})
-    resp = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
-        max_tokens=1200,
-        messages=[{"role": "user", "content": content}],
-    )
-    return "".join(block.text for block in resp.content if block.type == "text")
-
-def _call_gemini(images: list, prompt: str):
-    if not gemini_key:
-        raise RuntimeError("Gemini not configured")
-    client = genai.Client(api_key=gemini_key)
-    models_pool = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3.5-flash"]
-    contents = images + [prompt]
-    
-    last_err = None
-    for model in models_pool:
-        try:
-            resp = client.models.generate_content(model=model, contents=contents)
-            if resp and resp.text:
-                return resp.text
-        except Exception as e:
-            last_err = e
-            continue
-    raise last_err or Exception("All Gemini flash endpoints failed.")
-
 def analyze_chart(images: list, prompt: str) -> str:
-    errors = []
+    if not openrouter_key or OpenAI is None:
+        raise RuntimeError("OpenRouter API key or OpenAI package not configured.")
     
-    # Try Claude first
-    if anthropic_key and anthropic is not None:
-        try:
-            st.toast("Analyzing via Claude...", icon="🧠")
-            return _call_claude(images, prompt)
-        except Exception as e:
-            errors.append(f"Claude: {e}")
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=openrouter_key
+    )
 
-    # Try Gemini Flash pool second
-    if gemini_key:
-        try:
-            st.toast("Analyzing via Gemini Flash...", icon="⚡")
-            return _call_gemini(images, prompt)
-        except Exception as e:
-            errors.append(f"Gemini: {e}")
+    content_blocks = []
+    for img in images:
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        b64_data = base64.b64encode(buf.getvalue()).decode()
+        content_blocks.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:image/png;base64,{b64_data}"}
+        })
+    
+    content_blocks.append({"type": "text", "text": prompt})
 
-    raise RuntimeError("Overload safeguard triggered. All provider endpoints are busy. Please try a single-shot chart analysis instead of multi-image bundles.")
+    try:
+        st.toast("Scanning via OpenRouter Free Tier...", icon="🌐")
+        response = client.chat.completions.create(
+            model="openrouter/free",  # Automatically routes to active free multimodal models
+            messages=[{"role": "user", "content": content_blocks}],
+            max_tokens=1500,
+            extra_headers={
+                "HTTP-Referer": "https://richforeverai.streamlit.app",
+                "X-Title": "RichforeverAI"
+            }
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        raise RuntimeError(f"OpenRouter API error: {e}")
 
 # ==============================================================================
-# TELEMETRY HELPERS
+# TELEMETRY HELPERS (FROM SOURCE 3)
 # ==============================================================================
 def get_bot_telemetry() -> dict:
     try:
@@ -277,7 +251,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("⚡ Low-Overhead Compressed Engine")
+st.sidebar.caption("⚡ OpenRouter Free Vision Engine")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -327,18 +301,18 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-hero">
             <h1>⚡ RICHFOREVER AI</h1>
-            <p>ICT Vision Confluence & Live MT5 Telemetry Hub</p>
+            <p>ICT OpenRouter Vision & Live MT5 Telemetry Hub</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Low-Overhead Compression Active</h4>
-            <p>Images are automatically optimized to 900x900 resolution to prevent server congestion and timeout blocks.</p>
+            <h4>🌐 OpenRouter Free Tier Active</h4>
+            <p>Scans are routed through OpenRouter's free multi-model gateway with image compression enabled.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Recommended during high-traffic periods for instant, reliable ICT chart reads.</p>
+            <p>Ready for instant chart feedback and FVG detection.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -349,12 +323,12 @@ elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
             <h1>📸 Single Chart Analysis</h1>
-            <p>ICT Vision Confluence</p>
+            <p>OpenRouter Vision Confluence</p>
         </div>
     """, unsafe_allow_html=True)
 
-    if not gemini_key and not anthropic_key:
-        st.error("⚠️ No vision provider configured.")
+    if not openrouter_key:
+        st.error("⚠️ OpenRouter API key missing. Add `OPENROUTER_API_KEY` to your Streamlit secrets.")
         st.stop()
 
     uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
@@ -365,7 +339,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing optimized scan..."):
+            with st.spinner("Executing OpenRouter scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -388,8 +362,8 @@ elif page == "Multi-Timeframe Confluence":
         </div>
     """, unsafe_allow_html=True)
 
-    if not gemini_key and not anthropic_key:
-        st.error("⚠️ No vision provider configured.")
+    if not openrouter_key:
+        st.error("⚠️ OpenRouter API key missing. Add `OPENROUTER_API_KEY` to your Streamlit secrets.")
         st.stop()
 
     uploaded_files = st.file_uploader("Upload multiple timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
@@ -404,7 +378,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing compressed multi-timeframe feed..."):
+            with st.spinner("Processing multi-timeframe feed through OpenRouter..."):
                 try:
                     prompt = """
                     You are the RichforeverAI Vision Engine using exact ICT rules from the live execution bot.
