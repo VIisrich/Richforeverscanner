@@ -164,26 +164,41 @@ gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 # ==============================================================================
 # FAST OPTIMIZED MULTI-MODEL FALLBACK WRAPPER
 # ==============================================================================
-def safe_generate_content(client, contents: list, max_retries: int = 3):
-    """Rotates through optimized Flash models with instant failover and status feedback."""
-    models_pool = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"]
-    
+def safe_generate_content(client, contents: list, max_retries: int = 5):
+    """Rotates through Flash models with real exponential backoff, and tells overload
+    (503) apart from rate-limit/quota (429) so each gets the right kind of wait."""
+    # Newest model last: it's the most in-demand right now, so give the more
+    # mature/less-congested models first crack at the request.
+    models_pool = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.8-flash"]
+
+    last_err = None
     for attempt in range(max_retries):
         current_model = models_pool[attempt % len(models_pool)]
-        st.toast(f"Connecting to engine: {current_model}...", icon="⚡")
         try:
             return client.models.generate_content(model=current_model, contents=contents)
         except Exception as e:
+            last_err = e
             err_str = str(e)
-            is_overloaded = "503" in err_str or "UNAVAILABLE" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "timeout" in err_str.lower()
-            if is_overloaded and attempt < max_retries - 1:
-                time.sleep(1.5)
-                continue
+            print(f"[SCAN FAIL] model={current_model} attempt={attempt} error={err_str}")
+
+            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                # Per-minute quota exhausted — short backoff won't clear this,
+                # needs to wait out the rate-limit window.
+                st.toast(f"Rate limit hit on {current_model}, backing off...", icon="⏳")
+                wait = min(4 * (attempt + 1), 30)
+            elif "503" in err_str or "UNAVAILABLE" in err_str or "timeout" in err_str.lower():
+                st.toast(f"{current_model} overloaded, retrying...", icon="⚡")
+                wait = min(2 ** attempt, 20)
             else:
-                if attempt == max_retries - 1:
-                    raise e
+                # Not a retryable error (bad request, auth, etc.) — fail fast.
+                raise e
+
+            if attempt < max_retries - 1:
+                time.sleep(wait)
                 continue
-    raise Exception("All endpoints are currently busy. Please try again.")
+            raise e
+
+    raise last_err or Exception("All endpoints are currently busy. Please try again.")
 
 def load_and_optimize_image(uploaded_file):
     """Resizes uploaded images to prevent payload bottlenecks and hanging."""
@@ -340,7 +355,13 @@ elif page == "Single-Shot Analysis":
                     st.success("Scan complete")
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Analysis error: {e}")
+                    err_str = str(e)
+                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                        st.error("⚠️ You've hit the Gemini API rate limit (too many scans too fast). Wait a minute and try again — or upgrade your API key's tier for higher limits.")
+                    elif "503" in err_str or "UNAVAILABLE" in err_str:
+                        st.error("⚠️ Google's Gemini servers are overloaded right now. This is temporary — please try again shortly.")
+                    else:
+                        st.error(f"Analysis error: {e}")
 
 # ==============================================================================
 # PAGE 3: MULTI-TIMEFRAME CONFLUENCE
@@ -401,4 +422,10 @@ elif page == "Multi-Timeframe Confluence":
                     st.success("Multi-scan complete")
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Confluence error: {e}")
+                    err_str = str(e)
+                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                        st.error("⚠️ You've hit the Gemini API rate limit (too many scans too fast). Wait a minute and try again — or upgrade your API key's tier for higher limits.")
+                    elif "503" in err_str or "UNAVAILABLE" in err_str:
+                        st.error("⚠️ Google's Gemini servers are overloaded right now. This is temporary — please try again shortly.")
+                    else:
+                        st.error(f"Confluence error: {e}")
