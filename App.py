@@ -14,6 +14,12 @@ JSONBIN_BIN_ID = "6aa51966ffd5d16053fd7e2f"
 JSONBIN_MASTER_KEY = "$2a$10$V..urr.HG8zrlXI7byY/veOBjNWADGHWbJsfbEB3HfLmoaiGJ74xi"
 JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
 
+# ==============================================================================
+# MODEL CONFIGURATION (Switch models easily here)
+# ==============================================================================
+# Options: 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.1-pro'
+SELECTED_MODEL = "gemini-3.8-flash"
+
 st.set_page_config(
     page_title="RichforeverAI",
     page_icon="logo.png",
@@ -227,6 +233,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
+st.sidebar.caption(f"🧠 Model: `{SELECTED_MODEL}`")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -281,7 +288,11 @@ if page == "Home / Dashboard":
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
+    st.markdown(f"""
+        <div class="rf-card">
+            <h4>🧠 Active Model Engine</h4>
+            <p>Currently utilizing <code>{SELECTED_MODEL}</code> with automatic retry fallback handlers.</p>
+        </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
             <p>Upload one chart screenshot for a fast ICT read: market structure, liquidity sweeps, FVGs, confidence level, and a directional bias verdict.</p>
@@ -318,11 +329,11 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Analyzing market structure (with auto-retry protection)..."):
+            with st.spinner(f"Analyzing market structure via {SELECTED_MODEL}..."):
                 try:
                     response = safe_generate_content(
                         client=client,
-                        model='gemini-3.6-flash',
+                        model=SELECTED_MODEL,
                         contents=[image, f"{ICT_PROMPT}\n\nUser Question: {user_query}"]
                     )
                     st.markdown("### 📊 Scan Report")
@@ -356,9 +367,9 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(Image.open(f), caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Blending multi-timeframe narrative (with auto-retry protection)..."):
+            with st.spinner(f"Blending multi-timeframe narrative via {SELECTED_MODEL}..."):
                 try:
-                    prompt = """
+                    prompt = f"""
                     You are the RichforeverAI Vision Engine using the exact algorithmic ICT rules from the live execution bot.
                     Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using these strict rules:
                     1. **H1 Macro Bias**: Verify if price action is aligned with the 20 EMA trend direction and momentum.
@@ -373,7 +384,7 @@ elif page == "Multi-Timeframe Confluence":
                     - **5m FVG Status**: [Retracing to FVG / No Setup]
                     - **Confidence Level**: [High / Medium / Low]
                     - **Verdict**: [TAKE TRADE / WAIT / NO SETUP]
-                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A][also add sl and tp]
+                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A] (Include suggested SL and TP levels)
                     - **Quick Note**: [One sentence maximum reason matching the bot's execution engine rules]
                     """
 
@@ -383,7 +394,7 @@ elif page == "Multi-Timeframe Confluence":
 
                     response = safe_generate_content(
                         client=client,
-                        model='gemini-3.6-flash',
+                        model=SELECTED_MODEL,
                         contents=content_payload
                     )
                     st.markdown("### 🌐 Confluence Report")
