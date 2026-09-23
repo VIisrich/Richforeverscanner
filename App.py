@@ -199,11 +199,11 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
+    # Updated fallback pool with active free vision routers and models
     models_pool = [
         "openrouter/free",
         "google/gemma-4-31b-it:free",
-        "nex-agi/nex-n2.5-mini:free",
-        "inclusionai/ling-3.0-flash-vl:free"
+        "nex-agi/nex-n2.5-mini:free"
     ]
 
     last_err = None
