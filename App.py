@@ -160,6 +160,11 @@ st.markdown(f"""
 
 openrouter_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
 
+def _pil_to_b64_png(img):
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
 def load_and_optimize_image(uploaded_file):
     """Aggressively compresses images to 900x900 to ensure lightweight payloads."""
     img = Image.open(uploaded_file)
@@ -167,46 +172,64 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# OPENROUTER FREE VISION ENGINE
+# ROBUST OPENROUTER VISION ENGINE WITH FALLBACKS
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
-    if not openrouter_key or OpenAI is None:
-        raise RuntimeError("OpenRouter API key or OpenAI package not configured.")
-    
+    if not openrouter_key:
+        raise RuntimeError("OpenRouter API key not configured. Please set OPENROUTER_API_KEY in secrets.")
+    if OpenAI is None:
+        raise RuntimeError("openai package is not installed.")
+
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
-        api_key=openrouter_key
+        api_key=openrouter_key,
     )
 
-    content_blocks = []
+    content_parts = []
     for img in images:
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        b64_data = base64.b64encode(buf.getvalue()).decode()
-        content_blocks.append({
+        b64_data = _pil_to_b64_png(img)
+        content_parts.append({
             "type": "image_url",
-            "image_url": {"url": f"data:image/png;base64,{b64_data}"}
-        })
-    
-    content_blocks.append({"type": "text", "text": prompt})
-
-    try:
-        st.toast("Scanning via OpenRouter Free Tier...", icon="🌐")
-        response = client.chat.completions.create(
-            model="openrouter/free",  # Automatically routes to active free multimodal models
-            messages=[{"role": "user", "content": content_blocks}],
-            max_tokens=1500,
-            extra_headers={
-                "HTTP-Referer": "https://richforeverai.streamlit.app",
-                "X-Title": "RichforeverAI"
+            "image_url": {
+                "url": f"data:image/png;base64,{b64_data}"
             }
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        raise RuntimeError(f"OpenRouter API error: {e}")
+        })
+    content_parts.append({
+        "type": "text",
+        "text": prompt
+    })
+
+    models_pool = [
+        "openrouter/free",
+        "google/gemma-4-31b-it:free",
+        "nex-agi/nex-n2.5-mini:free",
+        "inclusionai/ling-3.0-flash-vl:free"
+    ]
+
+    last_err = None
+    for model in models_pool:
+        try:
+            st.toast(f"Analyzing via OpenRouter ({model})...", icon="⚡")
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": content_parts
+                    }
+                ],
+                max_tokens=1200
+            )
+            if response and response.choices and response.choices[0].message.content:
+                return response.choices[0].message.content
+        except Exception as e:
+            last_err = e
+            continue
+
+    raise last_err or Exception("All OpenRouter vision endpoints failed.")
 
 # ==============================================================================
-# TELEMETRY HELPERS (FROM SOURCE 3)
+# TELEMETRY HELPERS
 # ==============================================================================
 def get_bot_telemetry() -> dict:
     try:
@@ -251,7 +274,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("⚡ OpenRouter Free Vision Engine")
+st.sidebar.caption("⚡ Low-Overhead Compressed OpenRouter Engine")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -301,18 +324,18 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-hero">
             <h1>⚡ RICHFOREVER AI</h1>
-            <p>ICT OpenRouter Vision & Live MT5 Telemetry Hub</p>
+            <p>ICT Vision Confluence & Live MT5 Telemetry Hub (OpenRouter Powered)</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
         <div class="rf-card">
-            <h4>🌐 OpenRouter Free Tier Active</h4>
-            <p>Scans are routed through OpenRouter's free multi-model gateway with image compression enabled.</p>
+            <h4>⚡ Low-Overhead Compression Active</h4>
+            <p>Images are automatically optimized to 900x900 resolution to ensure lightweight payloads.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Ready for instant chart feedback and FVG detection.</p>
+            <p>Recommended during high-traffic periods for instant, reliable ICT chart reads via OpenRouter.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -323,12 +346,12 @@ elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
             <h1>📸 Single Chart Analysis</h1>
-            <p>OpenRouter Vision Confluence</p>
+            <p>ICT Vision Confluence</p>
         </div>
     """, unsafe_allow_html=True)
 
     if not openrouter_key:
-        st.error("⚠️ OpenRouter API key missing. Add `OPENROUTER_API_KEY` to your Streamlit secrets.")
+        st.error("⚠️ No OpenRouter API key configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
         st.stop()
 
     uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
@@ -339,7 +362,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing OpenRouter scan..."):
+            with st.spinner("Executing optimized scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -363,7 +386,7 @@ elif page == "Multi-Timeframe Confluence":
     """, unsafe_allow_html=True)
 
     if not openrouter_key:
-        st.error("⚠️ OpenRouter API key missing. Add `OPENROUTER_API_KEY` to your Streamlit secrets.")
+        st.error("⚠️ No OpenRouter API key configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
         st.stop()
 
     uploaded_files = st.file_uploader("Upload multiple timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
@@ -378,7 +401,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through OpenRouter..."):
+            with st.spinner("Processing compressed multi-timeframe feed..."):
                 try:
                     prompt = """
                     You are the RichforeverAI Vision Engine using exact ICT rules from the live execution bot.
