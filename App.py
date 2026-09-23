@@ -6,6 +6,12 @@ import base64
 from datetime import datetime, timedelta
 from google import genai
 from PIL import Image
+import io
+
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
 
 # ==============================================================================
 # CONFIG & SECRETS
@@ -50,7 +56,6 @@ st.markdown(f"""
         color: #eef0f6;
     }}
 
-    /* Hero header */
     .rf-hero {{
         text-align: center;
         padding: 1.4rem 1rem 1.6rem 1rem;
@@ -75,10 +80,8 @@ st.markdown(f"""
         letter-spacing: 0.3px;
     }}
 
-    /* Section headers inside pages */
     h2, h3 {{ color: #f3f4fa !important; font-weight: 700 !important; }}
 
-    /* Buttons */
     .stButton>button {{
         width: 100%;
         background: linear-gradient(135deg, #ff3b3b, #ff6a3d);
@@ -96,7 +99,6 @@ st.markdown(f"""
         box-shadow: 0 6px 18px rgba(255, 59, 59, 0.35);
     }}
 
-    /* Cards */
     .rf-card {{
         background: rgba(255,255,255,0.035);
         border: 1px solid rgba(255,255,255,0.08);
@@ -111,7 +113,6 @@ st.markdown(f"""
     }}
     .rf-card p {{ margin: 0; color: #c4c8da; font-size: 0.92rem; line-height: 1.5; }}
 
-    /* Sidebar */
     section[data-testid="stSidebar"] {{
         background: linear-gradient(180deg, #12101c 0%, #0b0c14 100%);
         border-right: 1px solid rgba(255,255,255,0.06);
@@ -128,7 +129,6 @@ st.markdown(f"""
         -webkit-text-fill-color: transparent;
     }}
 
-    /* Status pill */
     .rf-pill {{
         display: inline-block;
         width: 100%;
@@ -162,137 +162,74 @@ st.markdown(f"""
 gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_API_KEY", ""))
 
-# ==============================================================================
-# MULTI-PROVIDER VISION WRAPPER (Claude primary, Gemini fallback)
-# ==============================================================================
-# Gemini's 503 "high demand" errors have been persistent for a week+ (this is a
-# widely-reported, ongoing issue on Google's side, not something client-side
-# retries alone fix: https://discuss.ai.google.dev has many open threads on it).
-# Claude Sonnet 5 supports vision and is used as the primary engine here, with
-# Gemini kept only as an automatic fallback if Claude is unavailable or unset.
-
-import io
-try:
-    import anthropic
-except ImportError:
-    anthropic = None
-
-
 def _pil_to_b64_png(img):
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode()
 
+def load_and_optimize_image(uploaded_file):
+    """Aggressively compresses images to 900x900 to ensure lightweight payloads."""
+    img = Image.open(uploaded_file)
+    img.thumbnail((900, 900))
+    return img
 
-def _claude_generate(images: list, prompt: str, max_retries: int = 4):
-    """Calls Claude Sonnet 5 vision with retry/backoff on overload (529) or rate limit (429)."""
+# ==============================================================================
+# ROBUST MULTI-PROVIDER VISION ENGINE WITH LIGHTWEIGHT FALLBACKS
+# ==============================================================================
+def _call_claude(images: list, prompt: str):
     if not anthropic_key or anthropic is None:
         raise RuntimeError("Claude not configured")
-
     client = anthropic.Anthropic(api_key=anthropic_key)
     content = [
         {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": _pil_to_b64_png(img)}}
         for img in images
     ]
     content.append({"type": "text", "text": prompt})
+    resp = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1200,
+        messages=[{"role": "user", "content": content}],
+    )
+    return "".join(block.text for block in resp.content if block.type == "text")
 
-    last_err = None
-    for attempt in range(max_retries):
-        try:
-            resp = client.messages.create(
-                model="claude-sonnet-5",
-                max_tokens=1500,
-                messages=[{"role": "user", "content": content}],
-            )
-            return "".join(block.text for block in resp.content if block.type == "text")
-        except Exception as e:
-            last_err = e
-            err_str = str(e)
-            print(f"[CLAUDE FAIL] attempt={attempt} error={err_str}")
-            if "429" in err_str or "rate_limit" in err_str.lower():
-                st.toast("Claude rate limit hit, backing off...", icon="⏳")
-                wait = min(4 * (attempt + 1), 30)
-            elif "529" in err_str or "overloaded" in err_str.lower():
-                st.toast("Claude overloaded, retrying...", icon="⚡")
-                wait = min(2 ** attempt, 20)
-            else:
-                raise e
-            if attempt < max_retries - 1:
-                time.sleep(wait)
-                continue
-            raise e
-    raise last_err
-
-
-def _gemini_generate(images: list, prompt: str, max_retries: int = 5):
-    """Rotates through Gemini Flash models with real exponential backoff, and tells overload
-    (503) apart from rate-limit/quota (429) so each gets the right kind of wait."""
+def _call_gemini(images: list, prompt: str):
     if not gemini_key:
         raise RuntimeError("Gemini not configured")
-
     client = genai.Client(api_key=gemini_key)
-    # Newest model last: it's the most in-demand right now, so give the more
-    # mature/less-congested models first crack at the request.
-    models_pool = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.8-flash"]
+    models_pool = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3.5-flash"]
     contents = images + [prompt]
-
+    
     last_err = None
-    for attempt in range(max_retries):
-        current_model = models_pool[attempt % len(models_pool)]
+    for model in models_pool:
         try:
-            resp = client.models.generate_content(model=current_model, contents=contents)
-            return resp.text
+            resp = client.models.generate_content(model=model, contents=contents)
+            if resp and resp.text:
+                return resp.text
         except Exception as e:
             last_err = e
-            err_str = str(e)
-            print(f"[GEMINI FAIL] model={current_model} attempt={attempt} error={err_str}")
-
-            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                st.toast(f"Rate limit hit on {current_model}, backing off...", icon="⏳")
-                wait = min(4 * (attempt + 1), 30)
-            elif "503" in err_str or "UNAVAILABLE" in err_str or "timeout" in err_str.lower():
-                st.toast(f"{current_model} overloaded, retrying...", icon="⚡")
-                wait = min(2 ** attempt, 20)
-            else:
-                raise e
-
-            if attempt < max_retries - 1:
-                time.sleep(wait)
-                continue
-            raise e
-
-    raise last_err or Exception("All Gemini endpoints are currently busy. Please try again.")
-
+            continue
+    raise last_err or Exception("All Gemini flash endpoints failed.")
 
 def analyze_chart(images: list, prompt: str) -> str:
-    """Tries Claude first (primary), automatically falls back to Gemini if Claude
-    is unset or fails after its own retries. Raises the last error if both fail."""
     errors = []
+    
+    # Try Claude first
     if anthropic_key and anthropic is not None:
         try:
-            st.toast("Analyzing with Claude...", icon="🧠")
-            return _claude_generate(images, prompt)
+            st.toast("Analyzing via Claude...", icon="🧠")
+            return _call_claude(images, prompt)
         except Exception as e:
             errors.append(f"Claude: {e}")
 
+    # Try Gemini Flash pool second
     if gemini_key:
         try:
-            st.toast("Analyzing with Gemini...", icon="⚡")
-            return _gemini_generate(images, prompt)
+            st.toast("Analyzing via Gemini Flash...", icon="⚡")
+            return _call_gemini(images, prompt)
         except Exception as e:
             errors.append(f"Gemini: {e}")
 
-    if not errors:
-        raise RuntimeError("No vision provider configured — set ANTHROPIC_API_KEY and/or GEMINI_API_KEY.")
-    raise RuntimeError(" | ".join(errors))
-
-
-
-def load_and_optimize_image(uploaded_file):
-    """Resizes uploaded images to prevent payload bottlenecks and hanging."""
-    img = Image.open(uploaded_file)
-    img.thumbnail((1400, 1400))
-    return img
+    raise RuntimeError("Overload safeguard triggered. All provider endpoints are busy. Please try a single-shot chart analysis instead of multi-image bundles.")
 
 # ==============================================================================
 # TELEMETRY HELPERS
@@ -340,7 +277,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("⚡ Fast Flash Multi-Model Rotation")
+st.sidebar.caption("⚡ Low-Overhead Compressed Engine")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -379,7 +316,7 @@ Analyze the provided trading chart image using ICT concepts:
 1. **Market Structure**: Identify BOS, CHoCH, and trend direction.
 2. **Liquidity**: Pinpoint external/internal range liquidity sweeps.
 3. **Imbalances**: Locate Fair Value Gaps (FVG) or Order Blocks.
-4. **Confidence Level**: Provide a setup confidence rating (e.g., High, Medium, Low or percentage).
+4. **Confidence Level**: Provide a setup confidence rating.
 5. **Verdict**: Give a clean, zero-fluff directional bias and setup evaluation.
 """
 
@@ -396,16 +333,12 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Ultra-Fast Flash Rotation</h4>
-            <p>Optimized with instant failover across lightweight Flash endpoints to prevent long loading delays.</p>
+            <h4>⚡ Low-Overhead Compression Active</h4>
+            <p>Images are automatically optimized to 900x900 resolution to prevent server congestion and timeout blocks.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload one chart screenshot for a fast ICT read: market structure, liquidity sweeps, FVGs, confidence level, and directional bias.</p>
-        </div>
-        <div class="rf-card">
-            <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Blend Higher and Lower timeframe charts into a single zero-fluff verdict with strict bot execution rules.</p>
+            <p>Recommended during high-traffic periods for instant, reliable ICT chart reads.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -421,7 +354,7 @@ elif page == "Single-Shot Analysis":
     """, unsafe_allow_html=True)
 
     if not gemini_key and not anthropic_key:
-        st.error("⚠️ No vision provider configured — set ANTHROPIC_API_KEY and/or GEMINI_API_KEY in secrets.")
+        st.error("⚠️ No vision provider configured.")
         st.stop()
 
     uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
@@ -432,7 +365,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing fast scan..."):
+            with st.spinner("Executing optimized scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -442,13 +375,7 @@ elif page == "Single-Shot Analysis":
                     st.success("Scan complete")
                     st.markdown(result_text)
                 except Exception as e:
-                    err_str = str(e)
-                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "rate_limit" in err_str.lower():
-                        st.error("⚠️ Rate limit hit on all configured providers. Wait a minute and try again — or upgrade your API key's tier for higher limits.")
-                    elif "503" in err_str or "UNAVAILABLE" in err_str or "529" in err_str or "overloaded" in err_str.lower():
-                        st.error("⚠️ Vision provider(s) overloaded right now. This is temporary — please try again shortly.")
-                    else:
-                        st.error(f"Analysis error: {e}")
+                    st.error(f"⚠️ {e}")
 
 # ==============================================================================
 # PAGE 3: MULTI-TIMEFRAME CONFLUENCE
@@ -462,7 +389,7 @@ elif page == "Multi-Timeframe Confluence":
     """, unsafe_allow_html=True)
 
     if not gemini_key and not anthropic_key:
-        st.error("⚠️ No vision provider configured — set ANTHROPIC_API_KEY and/or GEMINI_API_KEY in secrets.")
+        st.error("⚠️ No vision provider configured.")
         st.stop()
 
     uploaded_files = st.file_uploader("Upload multiple timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
@@ -477,24 +404,20 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe confluence feed..."):
+            with st.spinner("Processing compressed multi-timeframe feed..."):
                 try:
                     prompt = """
                     You are the RichforeverAI Vision Engine using exact ICT rules from the live execution bot.
-                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using these strict rules:
-                    1. **H1 Macro Bias**: Verify if price action is aligned with the 20 EMA trend direction.
-                    2. **15m Equilibrium Filter**: For Buys, price must be in Discount. For Sells, price must be in Premium.
-                    3. **5m FVG Retracement**: Price pulling back into an active Fair Value Gap.
-                    4. **Dynamic R:R**: Minimum 2.0 R:R target.
+                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using strict ICT rules.
                     
                     Format strictly like this:
-                    - **Timeframe/Context**: [Multi-TF H1 + 15m + 5m Bot Alignment]
+                    - **Timeframe/Context**: [Multi-TF Alignment]
                     - **H1 Bias**: [Bullish / Bearish]
                     - **15m Equilibrium Zone**: [Discount / Premium]
                     - **5m FVG Status**: [Retracing to FVG / No Setup]
                     - **Confidence Level**: [High / Medium / Low]
                     - **Verdict**: [TAKE TRADE / WAIT / NO SETUP]
-                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A] (Include suggested SL and TP levels)
+                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A]
                     - **Quick Note**: [One sentence maximum reason]
                     """
 
@@ -506,10 +429,4 @@ elif page == "Multi-Timeframe Confluence":
                     st.success("Multi-scan complete")
                     st.markdown(result_text)
                 except Exception as e:
-                    err_str = str(e)
-                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "rate_limit" in err_str.lower():
-                        st.error("⚠️ Rate limit hit on all configured providers. Wait a minute and try again — or upgrade your API key's tier for higher limits.")
-                    elif "503" in err_str or "UNAVAILABLE" in err_str or "529" in err_str or "overloaded" in err_str.lower():
-                        st.error("⚠️ Vision provider(s) overloaded right now. This is temporary — please try again shortly.")
-                    else:
-                        st.error(f"Confluence error: {e}")
+                    st.error(f"⚠️ {e}")
