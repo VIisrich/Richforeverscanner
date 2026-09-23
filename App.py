@@ -172,7 +172,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# RELIABLE OPENROUTER VISION ENGINE (GEMINI FLASH LATEST)
+# RELIABLE OPENROUTER VISION ENGINE (GEMINI 2.5 FLASH)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -203,9 +203,9 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    st.toast("Analyzing via Gemini Flash Latest...", icon="⚡")
+    st.toast("Analyzing via Gemini 2.5 Flash...", icon="⚡")
     response = client.chat.completions.create(
-        model="google/gemini-flash-latest",
+        model="google/gemini-2.5-flash",
         messages=[
             {
                 "role": "user",
@@ -265,7 +265,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("⚡ Powered by Gemini Flash Latest")
+st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -321,7 +321,7 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Gemini Flash Latest Vision Active</h4>
+            <h4>⚡ Gemini 2.5 Flash Vision Active</h4>
             <p>Using Google's active multimodal engine alias via OpenRouter for high-speed chart scans.</p>
         </div>
         <div class="rf-card">
