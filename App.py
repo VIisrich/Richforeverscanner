@@ -172,7 +172,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# ROBUST OPENROUTER VISION ENGINE WITH MULTI-MODEL FALLBACK LOOP
+# RELIABLE OPENROUTER VISION ENGINE (GEMINI FLASH 1.5)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -203,39 +203,21 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    # Fallback pool of verified free vision-capable models on OpenRouter
-    vision_models = [
-        "google/gemma-4-31b-it:free",
-        "inclusionai/ling-3.0-flash-vl:free",
-        "z-ai/glm-5.2:free",
-        "openrouter/free"
-    ]
+    st.toast("Analyzing via Gemini Flash 1.5...", icon="⚡")
+    response = client.chat.completions.create(
+        model="google/gemini-flash-1.5",
+        messages=[
+            {
+                "role": "user",
+                "content": content_parts
+            }
+        ],
+        max_tokens=1200
+    )
+    if response and response.choices and response.choices[0].message.content:
+        return response.choices[0].message.content
 
-    last_error = None
-    for model_name in vision_models:
-        try:
-            st.toast(f"Scanning via {model_name}...", icon="⚡")
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": content_parts
-                    }
-                ],
-                max_tokens=1200
-            )
-            if response and response.choices and response.choices[0].message.content:
-                content = response.choices[0].message.content.strip()
-                if content:
-                    return content
-        except Exception as e:
-            last_error = e
-            continue
-
-    if last_error:
-        raise Exception(f"All free vision endpoints failed. Last error: {last_error}")
-    raise Exception("OpenRouter vision request returned empty response across all free vision providers.")
+    raise Exception("OpenRouter vision request returned empty response.")
 
 # ==============================================================================
 # TELEMETRY HELPERS
@@ -283,7 +265,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("⚡ Low-Overhead Compressed OpenRouter Engine")
+st.sidebar.caption("⚡ Powered by Google Gemini Flash 1.5")
 st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
 
 telemetry = get_bot_telemetry()
@@ -333,18 +315,18 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-hero">
             <h1>⚡ RICHFOREVER AI</h1>
-            <p>ICT Vision Confluence & Live MT5 Telemetry Hub (OpenRouter Powered)</p>
+            <p>ICT Vision Confluence & Live MT5 Telemetry Hub</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Robust Multi-Model Vision Fallback Active</h4>
-            <p>Automatically cycles through dedicated free vision models if a provider endpoint is unresponsive.</p>
+            <h4>⚡ Gemini Flash 1.5 Vision Active</h4>
+            <p>Using Google's high-speed multimodal engine via OpenRouter for instant, accurate chart analysis.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a chart screenshot to instantly scan for Fair Value Gaps and market structure.</p>
+            <p>Upload a chart screenshot to scan for Fair Value Gaps, order blocks, and liquidity sweeps.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -371,7 +353,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing optimized scan across vision providers..."):
+            with st.spinner("Executing Gemini vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -410,7 +392,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through vision providers..."):
+            with st.spinner("Processing multi-timeframe feed through Gemini..."):
                 try:
                     prompt = """
                     You are the RichforeverAI Vision Engine using exact ICT rules from the live execution bot.
