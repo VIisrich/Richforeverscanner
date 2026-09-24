@@ -1,9 +1,6 @@
 import os
-import time
 import streamlit as st
-import requests
 import base64
-from datetime import datetime, timedelta
 from PIL import Image
 import io
 
@@ -15,12 +12,8 @@ except ImportError:
 # ==============================================================================
 # CONFIG & SECRETS
 # ==============================================================================
-JSONBIN_BIN_ID = "6aa51966ffd5d16053fd7e2f"
-JSONBIN_MASTER_KEY = "$2a$10$V..urr.HG8zrlXI7byY/veOBjNWADGHWbJsfbEB3HfLmoaiGJ74xi"
-JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
-
 st.set_page_config(
-    page_title="RichforeverAI",
+    page_title="RichforeverAI - ICT Scanner",
     page_icon="logo.png",
     layout="centered",
     initial_sidebar_state="expanded"
@@ -140,17 +133,6 @@ st.markdown(f"""
         margin-bottom: 0.6rem;
     }}
     .rf-pill-online {{ background: rgba(46, 204, 113, 0.14); color: #4fe08a; border: 1px solid rgba(46,204,113,0.35); }}
-    .rf-pill-offline {{ background: rgba(255, 71, 87, 0.14); color: #ff6b7a; border: 1px solid rgba(255,71,87,0.35); }}
-    .rf-pill-active {{ background: rgba(46, 204, 113, 0.14); color: #4fe08a; border: 1px solid rgba(46,204,113,0.35); }}
-    .rf-pill-paused {{ background: rgba(255, 183, 3, 0.14); color: #ffcf5c; border: 1px solid rgba(255,183,3,0.35); }}
-
-    div[data-testid="stMetric"] {{
-        background: rgba(255,255,255,0.035);
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 10px;
-        padding: 0.5rem 0.7rem;
-        margin-bottom: 0.4rem;
-    }}
 
     hr {{ border-color: rgba(255,255,255,0.08) !important; }}
     ::-webkit-scrollbar {{ width: 8px; }}
@@ -220,41 +202,7 @@ def analyze_chart(images: list, prompt: str) -> str:
     raise Exception("OpenRouter vision request returned empty response.")
 
 # ==============================================================================
-# TELEMETRY HELPERS
-# ==============================================================================
-def get_bot_telemetry() -> dict:
-    try:
-        r = requests.get(
-            f"{JSONBIN_URL}/latest",
-            headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"},
-            timeout=5
-        )
-        if r.status_code == 200:
-            record = r.json().get("record", {})
-            heartbeat_str = record.get("last_heartbeat")
-            if heartbeat_str:
-                try:
-                    hb_time = datetime.strptime(heartbeat_str, '%Y-%m-%d %H:%M:%S')
-                    record["pc_online"] = (datetime.utcnow() - hb_time <= timedelta(seconds=20))
-                except Exception:
-                    record["pc_online"] = False
-            else:
-                record["pc_online"] = False
-            return record
-    except Exception:
-        pass
-    return {"bot_active": True, "account_equity": 0.0, "account_balance": 0.0, "open_trades_count": 0, "pc_online": False}
-
-def set_bot_status(status: bool):
-    try:
-        current = get_bot_telemetry()
-        current["bot_active"] = status
-        requests.put(JSONBIN_URL, json=current, headers={"X-Master-Key": JSONBIN_MASTER_KEY, "Content-Type": "application/json"}, timeout=5)
-    except Exception as e:
-        st.error(f"Failed to update engine state: {e}")
-
-# ==============================================================================
-# SIDEBAR NAVIGATION & LIVE TELEMETRY
+# SIDEBAR NAVIGATION
 # ==============================================================================
 st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)
 
@@ -265,35 +213,8 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash")
-st.sidebar.markdown("**🤖 Live MT5 Telemetry**")
-
-telemetry = get_bot_telemetry()
-pc_online = telemetry.get("pc_online", False)
-bot_active = telemetry.get("bot_active", True)
-equity = telemetry.get("account_equity", 0.0)
-balance = telemetry.get("account_balance", 0.0)
-open_count = telemetry.get("open_trades_count", 0)
-
-if not pc_online:
-    st.sidebar.markdown("<div class='rf-pill rf-pill-offline'>PC STATUS: OFFLINE 💀</div>", unsafe_allow_html=True)
-else:
-    st.sidebar.markdown("<div class='rf-pill rf-pill-online'>PC STATUS: CONNECTED 🟢</div>", unsafe_allow_html=True)
-    c1, c2 = st.sidebar.columns(2)
-    c1.metric("Equity", f"${equity:,.2f}")
-    c2.metric("Balance", f"${balance:,.2f}")
-    st.sidebar.metric("Active Positions", open_count)
-
-    if bot_active:
-        st.sidebar.markdown("<div class='rf-pill rf-pill-active'>ENGINE: ACTIVE 🟢</div>", unsafe_allow_html=True)
-        if st.sidebar.button("🔴 PAUSE ENGINE", use_container_width=True):
-            set_bot_status(False)
-            st.rerun()
-    else:
-        st.sidebar.markdown("<div class='rf-pill rf-pill-paused'>ENGINE: PAUSED 🔴</div>", unsafe_allow_html=True)
-        if st.sidebar.button("🟢 RESUME ENGINE", use_container_width=True):
-            set_bot_status(True)
-            st.rerun()
+st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
+st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash via OpenRouter")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -315,18 +236,22 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-hero">
             <h1>⚡ RICHFOREVER AI</h1>
-            <p>ICT Vision Confluence & Live MT5 Telemetry Hub</p>
+            <p>ICT Vision Confluence & Market Scanner Suite</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
         <div class="rf-card">
             <h4>⚡ Gemini 2.5 Flash Vision Active</h4>
-            <p>Using Google's active multimodal engine alias via OpenRouter for high-speed chart scans.</p>
+            <p>Using Google's multimodal engine via OpenRouter for high-speed, reliable chart scans and setup filtering.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a chart screenshot to scan for Fair Value Gaps, order blocks, and liquidity sweeps.</p>
+            <p>Upload a standalone chart screenshot to scan for Fair Value Gaps, order blocks, and liquidity sweeps instantly.</p>
+        </div>
+        <div class="rf-card">
+            <h4>🔄 Multi-Timeframe Confluence</h4>
+            <p>Cross-examine multiple timeframe captures (Macro H1, Equilibrium 15m, Execution 5m) with strict R:R, TP, and SL rules.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -395,7 +320,7 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Processing multi-timeframe feed through Gemini..."):
                 try:
                     prompt = """
-                    You are the RichforeverAI Vision Engine using exact ICT rules from the live execution bot.
+                    You are the RichforeverAI Vision Engine using exact ICT rules.
                     Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using strict ICT rules.
                     
                     Format strictly like this:
@@ -405,7 +330,9 @@ elif page == "Multi-Timeframe Confluence":
                     - **5m FVG Status**: [Retracing to FVG / No Setup]
                     - **Confidence Level**: [High / Medium / Low]
                     - **Verdict**: [ Enter trade / WAIT / NO SETUP]
-                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A][ also add tp and sl]
+                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A]
+                    - **Stop Loss (SL)**: [Exact price level or structural anchor]
+                    - **Take Profit (TP)**: [Exact price level or liquidity target]
                     - **Quick Note**: [One sentence maximum reason]
                     """
 
