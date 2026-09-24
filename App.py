@@ -224,7 +224,7 @@ You are an expert ICT (Inner Circle Trader) mentor and price action analyst.
 Analyze the provided trading chart image using ICT concepts:
 1. **Direction**: State clearly whether to **BUY**, **SELL**, or **WAIT**.
 2. **Setup Details**: Stop Loss (SL), Take Profit (TP), and R:R ratio.
-3. **Reasoning**: One concise sentence.
+3. **Reasoning**: Specific market structure and execution details.
 """
 
 # ==============================================================================
@@ -249,7 +249,7 @@ if page == "Home / Dashboard":
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multiple timeframe captures with direct BUY/SELL verdicts, TP, and SL targets.</p>
+            <p>Cross-examine multiple timeframe captures with direct BUY/SELL verdicts, exact target levels, and detailed action plans.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -318,14 +318,14 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Processing multi-timeframe feed through Gemini..."):
                 try:
                     prompt = """
-                    You are the RichforeverAI Vision Engine. Look at the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) and give a direct, simple response.
+                    You are the RichforeverAI Vision Engine. Look at the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) and give a clean, precise response.
                     
-                    Format strictly like this and keep it short:
+                    Format strictly like this:
                     - **Verdict**: [ 🟢 BUY / 🔴 SELL / ⏳ WAIT ]
                     - **Stop Loss (SL)**: [ Exact price ]
                     - **Take Profit (TP)**: [ Exact price ]
                     - **R:R**: [ e.g. 1:2.5 ]
-                    - **Reason**: [ One sentence max ]
+                    - **Reason / Action Plan**: [If BUY/SELL: Explain why it's a high-probability setup (e.g. liquidity sweep + FVG tap). If WAIT: Explain why price action is invalid right now and state the exact trigger or zone to wait for before entering.]
                     """
 
                     result_text = analyze_chart(
