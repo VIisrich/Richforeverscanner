@@ -214,7 +214,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash")
+st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash via OpenRouter")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -226,7 +226,7 @@ Analyze the provided trading chart image using ICT concepts:
 2. **Liquidity**: Pinpoint external/internal range liquidity sweeps.
 3. **Imbalances**: Locate Fair Value Gaps (FVG) or Order Blocks.
 4. **Confidence Level**: Provide a setup confidence rating.
-5. **Verdict**: Give a clean, zero-fluff directional bias and setup evaluation.
+5. **Verdict**: Give a clean, zero-fluff directional bias and setup evaluation explicitly stating BUY, SELL, or WAIT.
 """
 
 # ==============================================================================
@@ -243,11 +243,15 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>⚡ Gemini 2.5 Flash Vision Active</h4>
-            <p>Using Google's multimodal engine alias via OpenRouter for high-speed chart scans.</p>
+            <p>Using Google's multimodal engine via OpenRouter for high-speed, reliable chart scans and setup filtering.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a chart screenshot to scan for Fair Value Gaps, order blocks, and liquidity sweeps.</p>
+            <p>Upload a standalone chart screenshot to scan for Fair Value Gaps, order blocks, and liquidity sweeps instantly.</p>
+        </div>
+        <div class="rf-card">
+            <h4>🔄 Multi-Timeframe Confluence</h4>
+            <p>Cross-examine multiple timeframe captures (Macro H1, Equilibrium 15m, Execution 5m) with strict R:R, TP, and SL rules.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -325,8 +329,10 @@ elif page == "Multi-Timeframe Confluence":
                     - **15m Equilibrium Zone**: [Discount / Premium]
                     - **5m FVG Status**: [Retracing to FVG / No Setup]
                     - **Confidence Level**: [High / Medium / Low]
-                    - **Verdict**: [Enter trade / WAIT / NO SETUP]
-                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A][ also add tp and sl]
+                    - **Verdict**: [BUY / SELL / WAIT]
+                    - **Target R:R**: [Must be >= 2.0R if active trade, else N/A]
+                    - **Stop Loss (SL)**: [Exact price level or structural anchor]
+                    - **Take Profit (TP)**: [Exact price level or liquidity target]
                     - **Quick Note**: [One sentence maximum reason]
                     """
 
