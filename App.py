@@ -194,7 +194,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 "content": content_parts
             }
         ],
-        max_tokens=1200
+        max_tokens=800
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
@@ -222,11 +222,9 @@ st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash via OpenRouter")
 ICT_PROMPT = """
 You are an expert ICT (Inner Circle Trader) mentor and price action analyst.
 Analyze the provided trading chart image using ICT concepts:
-1. **Market Structure**: Identify BOS, CHoCH, and trend direction.
-2. **Liquidity**: Pinpoint external/internal range liquidity sweeps.
-3. **Imbalances**: Locate Fair Value Gaps (FVG) or Order Blocks.
-4. **Confidence Level**: Provide a setup confidence rating.
-5. **Verdict**: Give a clean, zero-fluff directional bias and setup evaluation.
+1. **Direction**: State clearly whether to **BUY**, **SELL**, or **WAIT**.
+2. **Setup Details**: Stop Loss (SL), Take Profit (TP), and R:R ratio.
+3. **Reasoning**: One concise sentence.
 """
 
 # ==============================================================================
@@ -251,7 +249,7 @@ if page == "Home / Dashboard":
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multiple timeframe captures (Macro H1, Equilibrium 15m, Execution 5m) with strict R:R, TP, and SL rules.</p>
+            <p>Cross-examine multiple timeframe captures with direct BUY/SELL verdicts, TP, and SL targets.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -320,20 +318,14 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Processing multi-timeframe feed through Gemini..."):
                 try:
                     prompt = """
-                    You are the RichforeverAI Vision Engine using exact ICT rules.
-                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using strict ICT rules.
+                    You are the RichforeverAI Vision Engine. Look at the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) and give a direct, simple response.
                     
-                    Format strictly like this:
-                    - **Timeframe/Context**: [Multi-TF Alignment]
-                    - **H1 Bias**: [Bullish / Bearish]
-                    - **15m Equilibrium Zone**: [Discount / Premium]
-                    - **5m FVG Status**: [Retracing to FVG / No Setup]
-                    - **Confidence Level**: [High / Medium / Low]
-                    - **Verdict**: [ Enter trade / WAIT / NO SETUP]
-                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A]
-                    - **Stop Loss (SL)**: [Exact price level or structural anchor]
-                    - **Take Profit (TP)**: [Exact price level or liquidity target]
-                    - **Quick Note**: [One sentence maximum reason]
+                    Format strictly like this and keep it short:
+                    - **Verdict**: [ 🟢 BUY / 🔴 SELL / ⏳ WAIT ]
+                    - **Stop Loss (SL)**: [ Exact price ]
+                    - **Take Profit (TP)**: [ Exact price ]
+                    - **R:R**: [ e.g. 1:2.5 ]
+                    - **Reason**: [ One sentence max ]
                     """
 
                     result_text = analyze_chart(
