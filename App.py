@@ -214,31 +214,19 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash via OpenRouter")
+st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash")
 
 # ==============================================================================
-# ALGORITHMIC ICT STRATEGY PROMPTS
+# SHARED ICT ANALYSIS PROMPT
 # ==============================================================================
 ICT_PROMPT = """
-You are the RichforeverAI algorithmic vision engine. Analyze the provided chart using your strict mechanical ICT strategy rules:
-1. **H1 Bias**: Check 20 EMA and recent candle closes (Must be explicitly Bullish or Bearish).
-2. **15m Equilibrium**: Determine if price is in Premium (above 50% midpoint) or Discount (below 50% midpoint). Sells only in Premium; Buys only in Discount.
-3. **5m FVG & Confluence**: Locate active Fair Value Gaps and structural swing points (5-candle high/low for SL).
-4. **Risk-to-Reward (R:R)**: Calculate potential target against liquidity pools (BSL/SSL). Must be >= 2.0R.
-5. **Verdict**: Output must be strict: ENTER TRADE, WAIT, or NO SETUP.
-"""
-
-MULTI_TF_PROMPT = """
-You are the RichforeverAI Multi-TF Confluence Engine. Analyze the H1, 15m, and 5m charts together using these exact mechanical rules:
-- **H1 Bias**: [Bullish / Bearish]
-- **15m Equilibrium Zone**: [Discount / Premium — Must match direction: Buy in Discount, Sell in Premium]
-- **5m FVG Status**: [Mitigating FVG / No Setup]
-- **Confidence Level**: [High / Medium / Low]
-- **Verdict**: [ENTER TRADE / WAIT / NO SETUP]
-- **Target R:R**: [Must be >= 2.0R if ENTER TRADE, else N/A]
-- **Stop Loss (SL)**: [Exact structural anchor + ATR buffer]
-- **Take Profit (TP)**: [Exact liquidity target / FVG pool]
-- **Quick Note**: [Strict mechanical reason based on FVG & Equilibrium]
+You are an expert ICT (Inner Circle Trader) mentor and price action analyst.
+Analyze the provided trading chart image using ICT concepts:
+1. **Market Structure**: Identify BOS, CHoCH, and trend direction.
+2. **Liquidity**: Pinpoint external/internal range liquidity sweeps.
+3. **Imbalances**: Locate Fair Value Gaps (FVG) or Order Blocks.
+4. **Confidence Level**: Provide a setup confidence rating.
+5. **Verdict**: Give a clean, zero-fluff directional bias and setup evaluation.
 """
 
 # ==============================================================================
@@ -248,22 +236,18 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-hero">
             <h1>⚡ RICHFOREVER AI</h1>
-            <p>Algorithmic ICT Vision Confluence & Market Scanner Suite</p>
+            <p>ICT Vision Confluence & Market Scanner Suite</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Algorithmic Execution Rules Active</h4>
-            <p>Scans charts using your exact backtest parameters: H1 trend bias, 15m Premium/Discount equilibrium filters, and strict 2.0R FVG targets.</p>
+            <h4>⚡ Gemini 2.5 Flash Vision Active</h4>
+            <p>Using Google's multimodal engine alias via OpenRouter for high-speed chart scans.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a standalone chart screenshot to scan for Fair Value Gaps, structural swing points, and setup viability.</p>
-        </div>
-        <div class="rf-card">
-            <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multiple timeframe captures (Macro H1, Equilibrium 15m, Execution 5m) before taking action.</p>
+            <p>Upload a chart screenshot to scan for Fair Value Gaps, order blocks, and liquidity sweeps.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -274,7 +258,7 @@ elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
             <h1>📸 Single Chart Analysis</h1>
-            <p>Algorithmic ICT Vision Feed</p>
+            <p>ICT Vision Confluence</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -287,7 +271,7 @@ elif page == "Single-Shot Analysis":
     if uploaded_file is not None:
         image = load_and_optimize_image(uploaded_file)
         st.image(image, caption="Optimized Chart Feed", use_container_width=True)
-        user_query = st.text_input("Custom instructions:", value="Evaluate this chart against ICT FVG and equilibrium rules.")
+        user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
             with st.spinner("Executing Gemini vision scan..."):
@@ -296,7 +280,7 @@ elif page == "Single-Shot Analysis":
                         images=[image],
                         prompt=f"{ICT_PROMPT}\n\nUser Question: {user_query}"
                     )
-                    st.markdown("### 📊 Algorithmic Scan Report")
+                    st.markdown("### 📊 Scan Report")
                     st.success("Scan complete")
                     st.markdown(result_text)
                 except Exception as e:
@@ -331,9 +315,24 @@ elif page == "Multi-Timeframe Confluence":
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
             with st.spinner("Processing multi-timeframe feed through Gemini..."):
                 try:
+                    prompt = """
+                    You are the RichforeverAI Vision Engine using exact ICT rules.
+                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using strict ICT rules.
+                    
+                    Format strictly like this:
+                    - **Timeframe/Context**: [Multi-TF Alignment]
+                    - **H1 Bias**: [Bullish / Bearish]
+                    - **15m Equilibrium Zone**: [Discount / Premium]
+                    - **5m FVG Status**: [Retracing to FVG / No Setup]
+                    - **Confidence Level**: [High / Medium / Low]
+                    - **Verdict**: [Enter trade / WAIT / NO SETUP]
+                    - **Target R:R**: [Must be >= 2.0R if TAKE TRADE, else N/A][ also add tp and sl]
+                    - **Quick Note**: [One sentence maximum reason]
+                    """
+
                     result_text = analyze_chart(
                         images=optimized_images,
-                        prompt=MULTI_TF_PROMPT
+                        prompt=prompt
                     )
                     st.markdown("### 🌐 Confluence Report")
                     st.success("Multi-scan complete")
