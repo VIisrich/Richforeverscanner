@@ -272,20 +272,28 @@ def analyze_chart(images: list, prompt: str) -> str:
         "4. Keep reasons direct and concise (one sentence maximum)."
     )
     
-    # Pass PIL images and prompt directly to the native Gemini SDK contents array
     contents = images + [full_prompt]
-
-    st.toast("Analyzing via Google Gemini SDK", icon="⚡")
     
-    response = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=contents
-    )
+    # Prioritize gemini-3.6-flash, with automatic fallback options
+    models_to_try = ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-2.5-flash"]
     
-    if response and response.text:
-        return response.text
-
-    raise Exception("Gemini vision request returned empty response.")
+    last_exception = None
+    for model_name in models_to_try:
+        try:
+            st.toast(f"Analyzing via Google Gemini SDK ({model_name})", icon="⚡")
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents
+            )
+            if response and response.text:
+                return response.text
+        except Exception as e:
+            last_exception = e
+            if "503" in str(e) or "UNAVAILABLE" in str(e) or "NOT_FOUND" in str(e):
+                continue
+            raise e
+            
+    raise Exception(f"All Gemini models are currently unavailable. Details: {last_exception}")
 
 # ==============================================================================
 # VERDICT EXTRACTION & URGENCY BANNER
@@ -356,7 +364,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Google Gemini SDK (gemini-3.8-flash)")
+st.sidebar.caption("⚡ Powered by Google Gemini SDK (gemini-3.6-flash)")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
