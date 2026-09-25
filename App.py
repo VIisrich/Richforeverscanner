@@ -205,13 +205,13 @@ def _pil_to_b64_jpeg(img):
     buf = io.BytesIO()
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    img.save(buf, format="JPEG", quality=65)
+    img.save(buf, format="JPEG", quality=50)
     return base64.b64encode(buf.getvalue()).decode()
 
 def load_and_optimize_image(uploaded_file):
-    """Aggressively downscales and compresses images to prevent OpenRouter 402 token limit errors."""
+    """Ultra-compressed downscaling to prevent OpenRouter 402 token limit errors."""
     img = Image.open(uploaded_file)
-    img.thumbnail((350, 350))
+    img.thumbnail((250, 250))
     return img
 
 # ==============================================================================
@@ -255,7 +255,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 "content": content_parts
             }
         ],
-        max_tokens=800
+        max_tokens=500
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
@@ -345,12 +345,12 @@ st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
 # SHARED ICT ANALYSIS PROMPT (ALIGNED WITH LIVE BOT STRATEGY)
 # ==============================================================================
 ICT_PROMPT = """
-You are an expert ICT price action analyst using the exact rule set of the RichforeverAI bot:
-1. **H1 Macro Bias**: Identify higher timeframe trend structure.
-2. **15m Equilibrium Zone**: Confirm price position relative to dealing range (Discount for Buys, Premium for Sells).
-3. **5m FVG Confluence**: Locate a valid Fair Value Gap retracement matching the macro bias.
-4. **Target R:R**: Enforce minimum Risk-to-Reward ratio of >= 2.0R, targeting liquidity pools.
-5. **Verdict**: Give a clean evaluation stating BUY, SELL, or WAIT.
+ICT price action rules:
+1. H1 Macro Bias.
+2. 15m Equilibrium (Discount for Buys, Premium for Sells).
+3. 5m FVG Confluence.
+4. R:R >= 2.0R.
+5. State BUY, SELL, or WAIT.
 """
 
 # ==============================================================================
@@ -445,20 +445,12 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Processing multi-timeframe feed through Claude..."):
                 try:
                     prompt = """
-                    You are the RichforeverAI Vision Engine using live bot rules.
-                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry):
-                    
-                    Format strictly like this:
-                    - **Timeframe/Context**: [Multi-TF Alignment]
-                    - **H1 Bias**: [Bullish / Bearish]
-                    - **15m Equilibrium Zone**: [Discount / Premium]
-                    - **5m FVG Status**: [Retracing to FVG / No Setup]
-                    - **Confidence Level**: [High / Medium / Low]
+                    Analyze multi-TF charts (H1, 15m, 5m):
                     - **Verdict**: [BUY / SELL / WAIT]
-                    - **Target R:R**: [Must be >= 2.0R if active trade, else N/A]
-                    - **Stop Loss (SL)**: [Exact price level or structural anchor]
-                    - **Take Profit (TP)**: [Exact price level or liquidity target]
-                    - **Quick Note**: [One sentence maximum reason]
+                    - **Target R:R**: [>= 2.0R or N/A]
+                    - **Stop Loss (SL)**: [Price]
+                    - **Take Profit (TP)**: [Price]
+                    - **Quick Note**: [Reason]
                     """
 
                     result_text = analyze_chart(
