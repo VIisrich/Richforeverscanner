@@ -201,15 +201,17 @@ st.markdown(f"""
 
 openrouter_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
 
-def _pil_to_b64_png(img):
+def _pil_to_b64_jpeg(img):
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    img.save(buf, format="JPEG", quality=75)
     return base64.b64encode(buf.getvalue()).decode()
 
 def load_and_optimize_image(uploaded_file):
-    """Aggressively compresses images to 900x900 to ensure lightweight payloads."""
+    """Downscales images to 500x500 and compresses as JPEG to prevent token limit errors."""
     img = Image.open(uploaded_file)
-    img.thumbnail((900, 900))
+    img.thumbnail((500, 500))
     return img
 
 # ==============================================================================
@@ -232,11 +234,11 @@ def analyze_chart(images: list, prompt: str) -> str:
 
     content_parts = []
     for img in images:
-        b64_data = _pil_to_b64_png(img)
+        b64_data = _pil_to_b64_jpeg(img)
         content_parts.append({
             "type": "image_url",
             "image_url": {
-                "url": f"data:image/png;base64,{b64_data}"
+                "url": f"data:image/jpeg;base64,{b64_data}"
             }
         })
     content_parts.append({
@@ -253,7 +255,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 "content": content_parts
             }
         ],
-        max_tokens=1200
+        max_tokens=1000
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
