@@ -372,7 +372,7 @@ if page == "Home / Dashboard":
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a lower-timeframe execution chart to instantly scan bias, simple confluences, and clear SL/TP levels.</p>
+            <p>Upload a lower-timeframe execution chart to instantly scan bias, concise confluences, and clear SL/TP levels.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
@@ -381,7 +381,7 @@ if page == "Home / Dashboard":
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# PAGE 2: SINGLE-SHOT ANALYSIS (LTF EXECUTION)
+# PAGE 2: SINGLE-SHOT ANALYSIS (LTF EXECUTION - CONCISE FORMAT)
 # ==============================================================================
 elif page == "Single-Shot Analysis":
     st.markdown("""
@@ -402,17 +402,13 @@ elif page == "Single-Shot Analysis":
             with st.spinner("Analyzing lower-timeframe setup..."):
                 try:
                     prompt = f"""
-                    Analyze this Lower-Timeframe (LTF) chart using strict ICT execution rules:
-                    1. Determine Bias (BULLISH or BEARISH).
-                    2. Check for simple confluences (Liquidity sweep & FVG retest).
-                    3. Validate R:R >= 2.0R.
-                    4. Output EXACTLY these bullet points with clear, precise levels:
-                       - **Bias**: [BULLISH / BEARISH]
-                       - **Verdict**: [BUY / SELL / WAIT]
-                       - **Target R:R**: [>= 2.0R or N/A]
-                       - **Stop Loss (SL)**: [Exact Price Level]
-                       - **Take Profit (TP)**: [Exact Price Level]
-                       - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state exact price zone or condition we are waiting for.]
+                    Analyze this chart using strict ICT rules. Output ONLY these exact bullet points concisely, with no extra paragraphs:
+                    - **Bias**: [BULLISH / BEARISH]
+                    - **Verdict**: [BUY / SELL / WAIT]
+                    - **Target R:R**: [>= 2.0R or N/A]
+                    - **Stop Loss (SL)**: [Exact Price]
+                    - **Take Profit (TP)**: [Exact Price]
+                    - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state exact price zone or condition we are waiting for.]
                     
                     User Notes: {user_query}
                     """
