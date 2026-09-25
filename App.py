@@ -244,9 +244,9 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    st.toast("Analyzing via Claude 3.5 Sonnet...", icon="⚡")
+    st.toast("Analyzing via RichforeverAI", icon="⚡")
     response = client.chat.completions.create(
-        model="anthropic/claude-3.5-sonnet",
+        model="anthropic/claude-sonnet-4.6",  # Updated to current active model ID
         messages=[
             {
                 "role": "user",
