@@ -205,13 +205,13 @@ def _pil_to_b64_jpeg(img):
     buf = io.BytesIO()
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    img.save(buf, format="JPEG", quality=75)
+    img.save(buf, format="JPEG", quality=65)
     return base64.b64encode(buf.getvalue()).decode()
 
 def load_and_optimize_image(uploaded_file):
-    """Downscales images to 500x500 and compresses as JPEG to prevent token limit errors."""
+    """Aggressively downscales and compresses images to prevent OpenRouter 402 token limit errors."""
     img = Image.open(uploaded_file)
-    img.thumbnail((500, 500))
+    img.thumbnail((350, 350))
     return img
 
 # ==============================================================================
@@ -255,7 +255,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 "content": content_parts
             }
         ],
-        max_tokens=1000
+        max_tokens=800
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
@@ -345,12 +345,12 @@ st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
 # SHARED ICT ANALYSIS PROMPT (ALIGNED WITH LIVE BOT STRATEGY)
 # ==============================================================================
 ICT_PROMPT = """
-You are an expert ICT (Inner Circle Trader) mentor and price action analyst using the exact rule set of the RichforeverAI algorithmic bot:
-1. **H1 Macro Bias**: Identify higher timeframe trend structure (Bullish / Bearish continuation).
-2. **15m Equilibrium Zone**: Confirm price position relative to the 15m dealing range (Discount zone for Buys, Premium zone for Sells).
-3. **5m FVG Confluence**: Locate a valid Fair Value Gap (FVG) retracement matching the macro bias and equilibrium filter.
-4. **Target R:R**: Enforce a strict minimum Risk-to-Reward ratio of >= 2.0R, targeting Buy Side Liquidity (BSL) or Sell Side Liquidity (SSL) pools.
-5. **Verdict**: Give a clean, zero-fluff evaluation explicitly stating BUY, SELL, or WAIT.
+You are an expert ICT price action analyst using the exact rule set of the RichforeverAI bot:
+1. **H1 Macro Bias**: Identify higher timeframe trend structure.
+2. **15m Equilibrium Zone**: Confirm price position relative to dealing range (Discount for Buys, Premium for Sells).
+3. **5m FVG Confluence**: Locate a valid Fair Value Gap retracement matching the macro bias.
+4. **Target R:R**: Enforce minimum Risk-to-Reward ratio of >= 2.0R, targeting liquidity pools.
+5. **Verdict**: Give a clean evaluation stating BUY, SELL, or WAIT.
 """
 
 # ==============================================================================
@@ -367,7 +367,7 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>⚡ Live Bot Strategy Alignment</h4>
-            <p>Scanner logic mirrors the automated MT5 execution engine: H1 structure bias, 15m Premium/Discount equilibrium filters, and 5m FVG retracements.</p>
+            <p>Scanner logic mirrors the automated execution engine: H1 structure bias, 15m equilibrium filters, and 5m FVG retracements.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
@@ -375,7 +375,7 @@ if page == "Home / Dashboard":
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multi-TF captures (Macro H1, Equilibrium 15m, Execution 5m) with strict >= 2.0R, TP, and SL rules.</p>
+            <p>Cross-examine multi-TF captures with strict >= 2.0R, TP, and SL rules.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -445,8 +445,8 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Processing multi-timeframe feed through Claude..."):
                 try:
                     prompt = """
-                    You are the RichforeverAI Vision Engine using the exact programmatic rules of the live trading bot.
-                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using strict ICT strategy criteria:
+                    You are the RichforeverAI Vision Engine using live bot rules.
+                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry):
                     
                     Format strictly like this:
                     - **Timeframe/Context**: [Multi-TF Alignment]
