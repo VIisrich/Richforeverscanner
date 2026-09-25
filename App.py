@@ -202,11 +202,23 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# GLOBAL MAINTENANCE MODE & ADMIN BYPASS
+# GLOBAL MAINTENANCE MODE & ROBUST ADMIN BYPASS
 # ==============================================================================
 MAINTENANCE_MODE = True
-query_params = st.query_params
-is_admin_testing = query_params.get("mode") == "test"
+
+is_admin_testing = False
+try:
+    if st.query_params.get("mode") == "test":
+        is_admin_testing = True
+except Exception:
+    pass
+
+try:
+    exp_params = st.experimental_get_query_params()
+    if exp_params.get("mode") and "test" in exp_params.get("mode"):
+        is_admin_testing = True
+except Exception:
+    pass
 
 if MAINTENANCE_MODE and not is_admin_testing:
     st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)
