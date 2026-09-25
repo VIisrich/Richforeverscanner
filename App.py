@@ -202,42 +202,45 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# GLOBAL MAINTENANCE MODE & ROBUST ADMIN BYPASS
+# GLOBAL MAINTENANCE MODE & SECURE PASSCODE BYPASS
 # ==============================================================================
 MAINTENANCE_MODE = True
 
-is_admin_testing = False
-try:
-    if st.query_params.get("mode") == "test":
-        is_admin_testing = True
-except Exception:
-    pass
+if "admin_unlocked" not in st.session_state:
+    st.session_state["admin_unlocked"] = False
 
-try:
-    exp_params = st.experimental_get_query_params()
-    if exp_params.get("mode") and "test" in exp_params.get("mode"):
-        is_admin_testing = True
-except Exception:
-    pass
-
-if MAINTENANCE_MODE and not is_admin_testing:
+if MAINTENANCE_MODE and not st.session_state["admin_unlocked"]:
     st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)
     st.sidebar.markdown("---")
     st.sidebar.markdown("<div class='rf-pill rf-pill-maint'>STATUS: MAINTENANCE 🛠️</div>", unsafe_allow_html=True)
     st.sidebar.caption("⚡ Estimated back online around 2:30 PM")
 
     st.markdown("""
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 72vh; text-align: center; padding: 1rem;">
-            <div style="font-size: 3.8rem; margin-bottom: 0.8rem;">🛠️</div>
-            <h1 style="font-size: 2.3rem; font-weight: 800; background: linear-gradient(90deg, #ff5b5b, #ff9d5c 45%, #a06bff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.6rem;">SYSTEM MAINTENANCE</h1>
-            <p style="color: #9a9fb5; font-size: 1.02rem; max-width: 480px; line-height: 1.6; margin-bottom: 1.6rem;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem 1rem 0.5rem 1rem;">
+            <div style="font-size: 3.5rem; margin-bottom: 0.6rem;">🛠️</div>
+            <h1 style="font-size: 2.1rem; font-weight: 800; background: linear-gradient(90deg, #ff5b5b, #ff9d5c 45%, #a06bff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">SYSTEM MAINTENANCE</h1>
+            <p style="color: #9a9fb5; font-size: 0.98rem; max-width: 480px; line-height: 1.5; margin-bottom: 1rem;">
                 RichforeverAI is currently undergoing scheduled backend updates and scanner optimizations. All analysis suites are temporarily offline.
             </p>
-            <div style="background: rgba(255,157,92,0.1); border: 1px solid rgba(255,157,92,0.35); border-radius: 14px; padding: 0.9rem 1.5rem; color: #ff9d5c; font-weight: 600; font-size: 0.96rem; letter-spacing: 0.3px;">
+            <div style="background: rgba(255,157,92,0.1); border: 1px solid rgba(255,157,92,0.35); border-radius: 14px; padding: 0.7rem 1.2rem; color: #ff9d5c; font-weight: 600; font-size: 0.92rem; margin-bottom: 1rem;">
                 ⏳ Estimated Completion: Around <strong>2:30 PM</strong>
             </div>
         </div>
     """, unsafe_allow_html=True)
+
+    # Passcode box for admin testing
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.form("admin_login_form"):
+            passcode_input = st.text_input("🔑 Admin Passcode", type="password", placeholder="Enter passcode to test...")
+            submit_btn = st.form_submit_button("Unlock App for Testing")
+            if submit_btn:
+                if passcode_input == "richforever":
+                    st.session_state["admin_unlocked"] = True
+                    st.rerun()
+                else:
+                    st.error("Incorrect passcode.")
+
     st.stop()
 
 openrouter_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
@@ -375,10 +378,7 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-if is_admin_testing:
-    st.sidebar.markdown("<div class='rf-pill rf-pill-maint'>BYPASS ACTIVE 🛠️</div>", unsafe_allow_html=True)
-else:
-    st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
+st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
 st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
 
 # ==============================================================================
