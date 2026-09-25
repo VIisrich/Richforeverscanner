@@ -372,11 +372,11 @@ if page == "Home / Dashboard":
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a lower-timeframe execution chart to instantly scan bias, concise confluences, and clear SL/TP levels.</p>
+            <p>Upload a lower-timeframe execution chart to instantly scan bias, confidence levels, concise confluences, and clear SL/TP levels.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multi-TF captures with strict entry triggers, risk-to-reward parameters, and clear wait conditions.</p>
+            <p>Cross-examine multi-TF captures with strict entry triggers, confidence metrics, risk-to-reward parameters, and clear wait conditions.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -405,6 +405,7 @@ elif page == "Single-Shot Analysis":
                     Analyze this chart using strict ICT rules. Output ONLY these exact bullet points concisely, with no extra paragraphs:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
+                    - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Exact Price]
                     - **Take Profit (TP)**: [Exact Price]
@@ -450,6 +451,7 @@ elif page == "Multi-Timeframe Confluence":
                     Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
+                    - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Exact Price]
                     - **Take Profit (TP)**: [Exact Price]
