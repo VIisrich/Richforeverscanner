@@ -182,7 +182,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# RELIABLE OPENROUTER VISION ENGINE (CLAUDE 3.5 SONNET)
+# RELIABLE OPENROUTER VISION ENGINE (CLAUDE SONNET 4.6)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -215,7 +215,7 @@ def analyze_chart(images: list, prompt: str) -> str:
 
     st.toast("Analyzing via RichforeverAI", icon="⚡")
     response = client.chat.completions.create(
-        model="anthropic/claude-sonnet-4.6",  # Updated to current active model ID
+        model="anthropic/claude-sonnet-4.6",
         messages=[
             {
                 "role": "user",
@@ -224,7 +224,8 @@ def analyze_chart(images: list, prompt: str) -> str:
         ],
         max_tokens=1200
     )
-if response and response.choices and response.choices[0].message.content:
+    
+    if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
 
     raise Exception("OpenRouter vision request returned empty response.")
@@ -279,7 +280,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
+st.sidebar.caption("⚡ Powered by Claude Sonnet via OpenRouter")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -307,7 +308,7 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Claude 3.5 Sonnet Vision Active</h4>
+            <h4>⚡ Claude Sonnet Vision Active</h4>
             <p>Using Anthropic's state-of-the-art multimodal reasoning engine via OpenRouter for precise rule checking and setup filtering.</p>
         </div>
         <div class="rf-card">
