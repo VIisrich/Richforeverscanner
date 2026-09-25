@@ -248,17 +248,18 @@ def _pil_to_b64_jpeg(img):
     buf = io.BytesIO()
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    img.save(buf, format="JPEG", quality=50)
+    # Crisp, high-quality rendering for clean UI aesthetics
+    img.save(buf, format="JPEG", quality=85)
     return base64.b64encode(buf.getvalue()).decode()
 
 def load_and_optimize_image(uploaded_file):
-    """Aggressively downscaled to 150x150 to stay well under OpenRouter token limits."""
+    """High definition (800x800) thumbnail rendering to keep chart lines sharp."""
     img = Image.open(uploaded_file)
-    img.thumbnail((150, 150))
+    img.thumbnail((800, 800))
     return img
 
 # ==============================================================================
-# RELIABLE OPENROUTER VISION ENGINE (CLAUDE 3.5 SONNET)
+# GEMINI 3.8 FLASH VISION ENGINE
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -289,16 +290,16 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    st.toast("Analyzing via RichforeverAI", icon="⚡")
+    st.toast("Analyzing via RichforeverAI (Gemini 3.8 Flash)", icon="⚡")
     response = client.chat.completions.create(
-        model="anthropic/claude-sonnet-4.6",
+        model="google/gemini-3.8-flash",
         messages=[
             {
                 "role": "user",
                 "content": content_parts
             }
         ],
-        max_tokens=500
+        max_tokens=600
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
@@ -378,7 +379,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
+st.sidebar.caption("⚡ Powered by Gemini 3.8 Flash via OpenRouter")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -437,11 +438,11 @@ elif page == "Single-Shot Analysis":
 
     if uploaded_file is not None:
         image = load_and_optimize_image(uploaded_file)
-        st.image(image, caption="Optimized Chart Feed", use_container_width=True)
+        st.image(image, caption="High-Definition Chart Feed", use_container_width=True)
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing Claude vision scan..."):
+            with st.spinner("Executing Gemini 3.8 vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -481,7 +482,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through Claude..."):
+            with st.spinner("Processing multi-timeframe feed through Gemini 3.8..."):
                 try:
                     prompt = """
                     Analyze multi-TF charts (H1, 15m, 5m):
