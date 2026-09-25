@@ -137,6 +137,34 @@ st.markdown(f"""
     hr {{ border-color: rgba(255,255,255,0.08) !important; }}
     ::-webkit-scrollbar {{ width: 8px; }}
     ::-webkit-scrollbar-thumb {{ background: #3a2a55; border-radius: 8px; }}
+
+    .rf-verdict-banner {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.65rem;
+        padding: 1.1rem 1.2rem;
+        border-radius: 14px;
+        margin: 0.9rem 0 1.3rem 0;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: 0.8px;
+        text-align: center;
+        animation: rf-pulse 1.5s ease-in-out infinite;
+    }}
+    .rf-verdict-icon {{ font-size: 1.6rem; line-height: 1; }}
+    .rf-verdict-sub {{
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        opacity: 0.75;
+        margin-top: 0.15rem;
+    }}
+    @keyframes rf-pulse {{
+        0%, 100% {{ box-shadow: 0 0 0 0 var(--rf-glow); }}
+        50% {{ box-shadow: 0 0 26px 7px var(--rf-glow); }}
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -200,6 +228,43 @@ def analyze_chart(images: list, prompt: str) -> str:
         return response.choices[0].message.content
 
     raise Exception("OpenRouter vision request returned empty response.")
+
+# ==============================================================================
+# VERDICT EXTRACTION & URGENCY BANNER
+# ==============================================================================
+import re
+
+def extract_verdict(text: str):
+    """Pulls BUY / SELL / WAIT out of the model's report text."""
+    match = re.search(r"verdict[^\n]{0,80}?\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
+    if not match:
+        match = re.search(r"\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
+    return match.group(1).upper() if match else None
+
+def render_verdict_banner(text: str):
+    """Renders a big, color-coded, pulsing banner above the report so the
+    call-to-action (or lack thereof) is impossible to miss."""
+    verdict = extract_verdict(text)
+    if not verdict:
+        return
+
+    config = {
+        "BUY":  {"color": "#2ecc71", "bg": "rgba(46, 204, 113, 0.16)",  "border": "rgba(46, 204, 113, 0.60)",  "icon": "🟢", "label": "BUY",  "sub": "ENTER LONG"},
+        "SELL": {"color": "#ff3b3b", "bg": "rgba(255, 59, 59, 0.16)",   "border": "rgba(255, 59, 59, 0.60)",   "icon": "🔴", "label": "SELL", "sub": "ENTER SHORT"},
+        "WAIT": {"color": "#9a9fb5", "bg": "rgba(154, 159, 181, 0.14)", "border": "rgba(154, 159, 181, 0.45)", "icon": "⚪", "label": "WAIT", "sub": "NO SETUP YET"},
+    }[verdict]
+
+    st.markdown(f"""
+        <div class="rf-verdict-banner" style="
+            background:{config['bg']};
+            border:2px solid {config['border']};
+            color:{config['color']};
+            --rf-glow:{config['border']};
+        ">
+            <span class="rf-verdict-icon">{config['icon']}</span>
+            <span>{config['label']}<span class="rf-verdict-sub">{config['sub']}</span></span>
+        </div>
+    """, unsafe_allow_html=True)
 
 # ==============================================================================
 # SIDEBAR NAVIGATION
@@ -286,6 +351,7 @@ elif page == "Single-Shot Analysis":
                     )
                     st.markdown("### 📊 Scan Report")
                     st.success("Scan complete")
+                    render_verdict_banner(result_text)
                     st.markdown(result_text)
                 except Exception as e:
                     st.error(f"⚠️ {e}")
@@ -342,6 +408,7 @@ elif page == "Multi-Timeframe Confluence":
                     )
                     st.markdown("### 🌐 Confluence Report")
                     st.success("Multi-scan complete")
+                    render_verdict_banner(result_text)
                     st.markdown(result_text)
                 except Exception as e:
                     st.error(f"⚠️ {e}")
