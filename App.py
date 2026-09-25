@@ -252,7 +252,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# OPENROUTER VISION ENGINE (GPT-4O-MINI)
+# RICHFOREVER AI VISION ENGINE
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -283,7 +283,7 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt + "\n\nCRITICAL: Keep all bullet points short, direct, and complete."
     })
 
-    st.toast("Analyzing via RichforeverAI (GPT-4o-mini)", icon="⚡")
+    st.toast("Analyzing via RichforeverAI Engine", icon="⚡")
     response = client.chat.completions.create(
         model="openai/gpt-4o-mini",
         messages=[
@@ -297,7 +297,7 @@ def analyze_chart(images: list, prompt: str) -> str:
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
 
-    raise Exception("OpenRouter vision request returned empty response.")
+    raise Exception("Vision request returned empty response.")
 
 # ==============================================================================
 # VERDICT EXTRACTION & URGENCY BANNER
@@ -368,7 +368,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by GPT-4o-mini via OpenRouter")
+st.sidebar.caption("⚡ Powered by RichforeverAI")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -431,7 +431,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing GPT-4o-mini vision scan..."):
+            with st.spinner("Executing RichforeverAI vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -471,7 +471,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through GPT-4o-mini..."):
+            with st.spinner("Processing multi-timeframe feed through RichforeverAI..."):
                 try:
                     prompt = """
                     Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
@@ -479,7 +479,7 @@ elif page == "Multi-Timeframe Confluence":
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Price]
                     - **Take Profit (TP)**: [Price]
-                    - **Reason**: [One short sentence max]
+                    - **Reason**: [One sentence maximum]
                     """
 
                     result_text = analyze_chart(
