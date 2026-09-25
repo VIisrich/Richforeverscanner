@@ -228,7 +228,6 @@ if MAINTENANCE_MODE and not st.session_state["admin_unlocked"]:
         </div>
     """, unsafe_allow_html=True)
 
-    # Passcode box for admin testing
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         with st.form("admin_login_form"):
@@ -253,9 +252,9 @@ def _pil_to_b64_jpeg(img):
     return base64.b64encode(buf.getvalue()).decode()
 
 def load_and_optimize_image(uploaded_file):
-    """Ultra-compressed downscaling to prevent OpenRouter 402 token limit errors."""
+    """Aggressively downscaled to 150x150 to stay well under OpenRouter token limits."""
     img = Image.open(uploaded_file)
-    img.thumbnail((250, 250))
+    img.thumbnail((150, 150))
     return img
 
 # ==============================================================================
