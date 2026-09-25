@@ -248,18 +248,16 @@ def _pil_to_b64_jpeg(img):
     buf = io.BytesIO()
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    # Crisp, high-quality rendering for clean UI aesthetics
     img.save(buf, format="JPEG", quality=85)
     return base64.b64encode(buf.getvalue()).decode()
 
 def load_and_optimize_image(uploaded_file):
-    """High definition (800x800) thumbnail rendering to keep chart lines sharp."""
     img = Image.open(uploaded_file)
     img.thumbnail((800, 800))
     return img
 
 # ==============================================================================
-# GEMINI 3.8 FLASH VISION ENGINE
+# GEMINI 3.8 FLASH VISION ENGINE (FIXED TOKEN LIMIT)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -299,7 +297,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 "content": content_parts
             }
         ],
-        max_tokens=600
+        max_tokens=1500  # <--- Increased to 1500 so reports never cut off mid-sentence
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
@@ -310,14 +308,12 @@ def analyze_chart(images: list, prompt: str) -> str:
 # VERDICT EXTRACTION & URGENCY BANNER
 # ==============================================================================
 def extract_verdict(text: str):
-    """Pulls BUY / SELL / WAIT out of the model's report text."""
     match = re.search(r"verdict[^\n]{0,80}?\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
     if not match:
         match = re.search(r"\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
     return match.group(1).upper() if match else None
 
 def extract_level(text: str, keyword_pattern: str):
-    """Pulls a labeled price level out of the model's report text."""
     match = re.search(rf"{keyword_pattern}[^:\n]*:\s*\*{{0,2}}([^\n*]+)", text, re.IGNORECASE)
     if not match:
         return None
@@ -327,7 +323,6 @@ def extract_level(text: str, keyword_pattern: str):
     return value
 
 def render_verdict_banner(text: str):
-    """Renders a big, color-coded, pulsing banner above the report."""
     verdict = extract_verdict(text)
     if not verdict:
         return
