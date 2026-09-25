@@ -213,9 +213,9 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    st.toast("Analyzing via Claude 3.5 Sonnet...", icon="⚡")
+    st.toast("Analyzing via RichforeverAI", icon="⚡")
     response = client.chat.completions.create(
-        model="anthropic/claude-3.5-sonnet",
+        model="anthropic/claude-sonnet-4.6",  # Updated to current active model ID
         messages=[
             {
                 "role": "user",
@@ -224,7 +224,7 @@ def analyze_chart(images: list, prompt: str) -> str:
         ],
         max_tokens=1200
     )
-    if response and response.choices and response.choices[0].message.content:
+if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
 
     raise Exception("OpenRouter vision request returned empty response.")
