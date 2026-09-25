@@ -288,7 +288,7 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt + "\n\nCRITICAL: Keep all bullet points short and direct. Do not write long paragraphs."
     })
 
-    st.toast("Analyzing via RichforeverAI (Gemini 3.8 Flash)", icon="⚡")
+    st.toast("Analyzing via RichforeverAI ", icon="⚡")
     response = client.chat.completions.create(
         model="google/gemini-3.8-flash",
         messages=[
@@ -297,7 +297,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 "content": content_parts
             }
         ],
-        max_tokens=1000
+        max_tokens=750
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
@@ -437,7 +437,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing Gemini 3.8 vision scan..."):
+            with st.spinner("Executing vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
