@@ -145,16 +145,15 @@ st.markdown(f"""
         align-items: center;
         justify-content: center;
         gap: 0.65rem;
-        padding: 1.1rem 1.2rem;
-        border-radius: 14px;
+        padding: 1rem 1.2rem;
+        border-radius: 12px;
         margin: 0.9rem 0 1.3rem 0;
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         font-weight: 800;
         letter-spacing: 0.8px;
         text-align: center;
-        animation: rf-pulse 1.5s ease-in-out infinite;
     }}
-    .rf-verdict-icon {{ font-size: 1.6rem; line-height: 1; }}
+    .rf-verdict-icon {{ font-size: 1.5rem; line-height: 1; }}
     .rf-verdict-sub {{
         display: block;
         font-size: 0.75rem;
@@ -162,10 +161,6 @@ st.markdown(f"""
         letter-spacing: 0.5px;
         opacity: 0.75;
         margin-top: 0.15rem;
-    }}
-    @keyframes rf-pulse {{
-        0%, 100% {{ box-shadow: 0 0 0 0 var(--rf-glow); }}
-        50% {{ box-shadow: 0 0 26px 7px var(--rf-glow); }}
     }}
 
     .rf-levels-row {{
@@ -248,16 +243,16 @@ def _pil_to_b64_jpeg(img):
     buf = io.BytesIO()
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    img.save(buf, format="JPEG", quality=85)
+    img.save(buf, format="JPEG", quality=80)
     return base64.b64encode(buf.getvalue()).decode()
 
 def load_and_optimize_image(uploaded_file):
     img = Image.open(uploaded_file)
-    img.thumbnail((800, 800))
+    img.thumbnail((700, 700))
     return img
 
 # ==============================================================================
-# GEMINI 3.8 FLASH VISION ENGINE (OPTIMIZED TOKEN LIMIT & BREVITY)
+# OPENROUTER VISION ENGINE (GPT-4O-MINI)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -285,19 +280,19 @@ def analyze_chart(images: list, prompt: str) -> str:
         })
     content_parts.append({
         "type": "text",
-        "text": prompt + "\n\nCRITICAL: Keep all bullet points short and direct. Do not write long paragraphs."
+        "text": prompt + "\n\nCRITICAL: Keep all bullet points short, direct, and complete."
     })
 
-    st.toast("Analyzing via RichforeverAI ", icon="⚡")
+    st.toast("Analyzing via RichforeverAI (GPT-4o-mini)", icon="⚡")
     response = client.chat.completions.create(
-        model="google/gemini-3.8-flash",
+        model="openai/gpt-4o-mini",
         messages=[
             {
                 "role": "user",
                 "content": content_parts
             }
         ],
-        max_tokens=400
+        max_tokens=600
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
@@ -338,7 +333,6 @@ def render_verdict_banner(text: str):
             background:{config['bg']};
             border:2px solid {config['border']};
             color:{config['color']};
-            --rf-glow:{config['border']};
         ">
             <span class="rf-verdict-icon">{config['icon']}</span>
             <span>{config['label']}<span class="rf-verdict-sub">{config['sub']}</span></span>
@@ -374,7 +368,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Gemini 3.8 Flash via OpenRouter")
+st.sidebar.caption("⚡ Powered by GPT-4o-mini via OpenRouter")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -433,11 +427,11 @@ elif page == "Single-Shot Analysis":
 
     if uploaded_file is not None:
         image = load_and_optimize_image(uploaded_file)
-        st.image(image, caption="High-Definition Chart Feed", use_container_width=True)
+        st.image(image, caption="Optimized Chart Feed", use_container_width=True)
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing vision scan..."):
+            with st.spinner("Executing GPT-4o-mini vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -477,7 +471,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through Gemini 3.8..."):
+            with st.spinner("Processing multi-timeframe feed through GPT-4o-mini..."):
                 try:
                     prompt = """
                     Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
