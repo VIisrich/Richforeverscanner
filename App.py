@@ -246,7 +246,7 @@ def analyze_chart(images: list, prompt: str) -> str:
 
     st.toast("Analyzing via RichforeverAI", icon="⚡")
     response = client.chat.completions.create(
-        model="anthropic/claude-sonnet-4.6",  # Updated to current active model ID
+        model="anthropic/claude-sonnet-4.6",
         messages=[
             {
                 "role": "user",
@@ -285,8 +285,7 @@ def extract_level(text: str, keyword_pattern: str):
 
 def render_verdict_banner(text: str):
     """Renders a big, color-coded, pulsing banner above the report so the
-    call-to-action (or lack thereof) is impossible to miss, plus SL/TP
-    stat cards underneath it when the model reported them."""
+    call-to-action is impossible to miss, plus SL/TP stat cards underneath."""
     verdict = extract_verdict(text)
     if not verdict:
         return
@@ -341,16 +340,15 @@ st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 
 st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
 
 # ==============================================================================
-# SHARED ICT ANALYSIS PROMPT
+# SHARED ICT ANALYSIS PROMPT (ALIGNED WITH LIVE BOT STRATEGY)
 # ==============================================================================
 ICT_PROMPT = """
-You are an expert ICT (Inner Circle Trader) mentor and price action analyst.
-Analyze the provided trading chart image using ICT concepts:
-1. **Market Structure**: Identify BOS, CHoCH, and trend direction.
-2. **Liquidity**: Pinpoint external/internal range liquidity sweeps.
-3. **Imbalances**: Locate Fair Value Gaps (FVG) or Order Blocks.
-4. **Confidence Level**: Provide a setup confidence rating.
-5. **Verdict**: Give a clean, zero-fluff directional bias and setup evaluation explicitly stating BUY, SELL, or WAIT.
+You are an expert ICT (Inner Circle Trader) mentor and price action analyst using the exact rule set of the RichforeverAI algorithmic bot:
+1. **H1 Macro Bias**: Identify higher timeframe trend structure (Bullish / Bearish continuation).
+2. **15m Equilibrium Zone**: Confirm price position relative to the 15m dealing range (Discount zone for Buys, Premium zone for Sells).
+3. **5m FVG Confluence**: Locate a valid Fair Value Gap (FVG) retracement matching the macro bias and equilibrium filter.
+4. **Target R:R**: Enforce a strict minimum Risk-to-Reward ratio of >= 2.0R, targeting Buy Side Liquidity (BSL) or Sell Side Liquidity (SSL) pools.
+5. **Verdict**: Give a clean, zero-fluff evaluation explicitly stating BUY, SELL, or WAIT.
 """
 
 # ==============================================================================
@@ -366,16 +364,16 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Claude 3.5 Sonnet Vision Active</h4>
-            <p>Using Anthropic's state-of-the-art multimodal reasoning engine via OpenRouter for precise rule checking and setup filtering.</p>
+            <h4>⚡ Live Bot Strategy Alignment</h4>
+            <p>Scanner logic mirrors the automated MT5 execution engine: H1 structure bias, 15m Premium/Discount equilibrium filters, and 5m FVG retracements.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a standalone chart screenshot to scan for Fair Value Gaps, order blocks, and liquidity sweeps instantly.</p>
+            <p>Upload a standalone chart screenshot to scan for Fair Value Gaps, liquidity sweeps, and setup viability instantly.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multiple timeframe captures (Macro H1, Equilibrium 15m, Execution 5m) with strict R:R, TP, and SL rules.</p>
+            <p>Cross-examine multi-TF captures (Macro H1, Equilibrium 15m, Execution 5m) with strict >= 2.0R, TP, and SL rules.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -445,8 +443,8 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Processing multi-timeframe feed through Claude..."):
                 try:
                     prompt = """
-                    You are the RichforeverAI Vision Engine using exact ICT rules.
-                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using strict ICT rules.
+                    You are the RichforeverAI Vision Engine using the exact programmatic rules of the live trading bot.
+                    Analyze the provided multi-timeframe charts (H1 macro, 15m equilibrium, 5m entry) using strict ICT strategy criteria:
                     
                     Format strictly like this:
                     - **Timeframe/Context**: [Multi-TF Alignment]
