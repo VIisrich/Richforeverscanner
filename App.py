@@ -246,6 +246,16 @@ def get_openrouter_client():
 def load_and_optimize_image(uploaded_file):
     img = Image.open(uploaded_file)
     img.thumbnail((800, 800))
+    
+    # Safely convert RGBA/transparent images to RGB
+    if img.mode != "RGB":
+        if img.mode == "RGBA":
+            rgb_img = Image.new("RGB", img.size, (255, 255, 255))
+            rgb_img.paste(img, mask=img.split()[3])
+            img = rgb_img
+        else:
+            img = img.convert("RGB")
+            
     return img
 
 def analyze_chart(images: list, prompt: str) -> str:
