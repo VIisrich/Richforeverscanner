@@ -204,40 +204,14 @@ if MAINTENANCE_MODE and not st.session_state["admin_unlocked"]:
     st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)
     st.sidebar.markdown("---")
     st.sidebar.markdown("<div class='rf-pill rf-pill-maint'>STATUS: MAINTENANCE 🛠️</div>", unsafe_allow_html=True)
-    st.sidebar.caption("⚡ Estimated back online around 2:30 PM")
-
-    st.markdown("""
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem 1rem 0.5rem 1rem;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.6rem;">🛠️</div>
-            <h1 style="font-size: 2.1rem; font-weight: 800; background: linear-gradient(90deg, #ff5b5b, #ff9d5c 45%, #a06bff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">SYSTEM MAINTENANCE</h1>
-            <p style="color: #9a9fb5; font-size: 0.98rem; max-width: 480px; line-height: 1.5; margin-bottom: 1rem;">
-                RichforeverAI is currently undergoing scheduled backend updates and scanner optimizations. All analysis suites are temporarily offline.
-            </p>
-            <div style="background: rgba(255,157,92,0.1); border: 1px solid rgba(255,157,92,0.35); border-radius: 14px; padding: 0.7rem 1.2rem; color: #ff9d5c; font-weight: 600; font-size: 0.92rem; margin-bottom: 1rem;">
-                ⏳ Estimated Completion: Around <strong>2:30 PM</strong>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        with st.form("admin_login_form"):
-            passcode_input = st.text_input("🔑 Admin Passcode", type="password", placeholder="Enter passcode to test...")
-            submit_btn = st.form_submit_button("Unlock App for Testing")
-            if submit_btn:
-                if passcode_input == "richforever":
-                    st.session_state["admin_unlocked"] = True
-                    st.rerun()
-                else:
-                    st.error("Incorrect passcode.")
-
+    st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
     st.stop()
 
 # ==============================================================================
 # OPENROUTER API CLIENT & VISION ENGINE
 # ==============================================================================
 def get_openrouter_client():
-    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))))
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
     return OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
@@ -246,7 +220,6 @@ def get_openrouter_client():
 def load_and_optimize_image(uploaded_file):
     img = Image.open(uploaded_file)
     img.thumbnail((800, 800))
-    
     if img.mode != "RGB":
         if img.mode == "RGBA":
             rgb_img = Image.new("RGB", img.size, (255, 255, 255))
@@ -254,7 +227,6 @@ def load_and_optimize_image(uploaded_file):
             img = rgb_img
         else:
             img = img.convert("RGB")
-            
     return img
 
 def pil_image_to_base64_data_uri(img: Image.Image) -> str:
@@ -264,7 +236,7 @@ def pil_image_to_base64_data_uri(img: Image.Image) -> str:
     return f"data:image/jpeg;base64,{encoded}"
 
 def analyze_chart(images: list, prompt: str) -> str:
-    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))))
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
     if not api_key:
         raise RuntimeError("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
 
@@ -272,11 +244,13 @@ def analyze_chart(images: list, prompt: str) -> str:
     
     full_prompt = (
         prompt + 
-        "\n\nSTRICT RULES:\n"
+        "\n\nSTRICT ICT ANALYSIS RULES (Keep reasons simple & direct):\n"
         "1. Follow ICT price action rules strictly (H1 macro bias, 15m equilibrium discount/premium, 5m FVG confluence, R:R >= 2.0R).\n"
         "2. Output must clearly state BUY, SELL, or WAIT.\n"
         "3. Provide exact Stop Loss (SL) and Take Profit (TP) levels if actionable.\n"
-        "4. Keep reasons direct and concise (one sentence maximum)."
+        "4. REASONING:\n"
+        "   - If BUY/SELL: State the core catalyst simply in 1 sentence (e.g., liquidity sweep into 15m discount FVG).\n"
+        "   - If WAIT: State the exact zone or price action condition we are waiting for before entering."
     )
     
     content_list = [{"type": "text", "text": full_prompt}]
@@ -288,14 +262,12 @@ def analyze_chart(images: list, prompt: str) -> str:
         })
     
     messages = [{"role": "user", "content": content_list}]
-    
-    # OpenRouter model endpoint rotation
     models_to_try = ["google/gemini-2.5-flash", "google/gemini-2.5-flash-preview", "google/gemini-flash-1.5"]
     
     last_exception = None
     for model_name in models_to_try:
         try:
-            st.toast(f"Analyzing via OpenRouter ({model_name})", icon="⚡")
+            st.toast(f"Analyzing via RichforeverAI Engine...", icon="⚡")
             response = client.chat.completions.create(
                 model=model_name,
                 messages=messages
@@ -308,7 +280,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 continue
             raise e
             
-    raise Exception(f"All OpenRouter models are currently unavailable. Details: {last_exception}")
+    raise Exception(f"All scanner nodes currently busy. Details: {last_exception}")
 
 # ==============================================================================
 # VERDICT EXTRACTION & URGENCY BANNER
@@ -379,18 +351,18 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by OpenRouter (google/gemini-2.5-flash)")
+st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
 # ==============================================================================
 ICT_PROMPT = """
-ICT price action rules:
-1. H1 Macro Bias.
-2. 15m Equilibrium (Discount for Buys, Premium for Sells).
+ICT price action analysis:
+1. H1 Macro Bias check.
+2. 15m Equilibrium check.
 3. 5m FVG Confluence.
-4. R:R >= 2.0R.
-5. State BUY, SELL, or WAIT.
+4. R:R >= 2.0R validation.
+5. Verdict (BUY, SELL, or WAIT).
 """
 
 # ==============================================================================
@@ -411,11 +383,11 @@ if page == "Home / Dashboard":
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a standalone chart screenshot to scan for Fair Value Gaps, liquidity sweeps, and setup viability instantly.</p>
+            <p>Upload a standalone chart screenshot to scan for Fair Value Gaps, liquidity sweeps, and simple trade rationale instantly.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multi-TF captures with strict >= 2.0R, TP, and SL rules.</p>
+            <p>Cross-examine multi-TF captures with strict entry triggers, risk-to-reward parameters, and clear wait conditions.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -435,10 +407,10 @@ elif page == "Single-Shot Analysis":
     if uploaded_file is not None:
         image = load_and_optimize_image(uploaded_file)
         st.image(image, caption="Optimized Chart Feed", use_container_width=True)
-        user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
+        user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG, liquidity, and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing OpenRouter vision scan..."):
+            with st.spinner("Executing ICT vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -474,7 +446,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through OpenRouter..."):
+            with st.spinner("Processing multi-timeframe feed..."):
                 try:
                     prompt = """
                     Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
@@ -482,7 +454,7 @@ elif page == "Multi-Timeframe Confluence":
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Price]
                     - **Take Profit (TP)**: [Price]
-                    - **Reason**: [Exactly one sentence maximum]
+                    - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state the exact price zone/condition we are waiting for.]
                     """
 
                     result_text = analyze_chart(
