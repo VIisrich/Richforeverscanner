@@ -4,7 +4,8 @@ import base64
 from PIL import Image
 import io
 import re
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
 # ==============================================================================
 # CONFIG & SECRETS
@@ -234,14 +235,11 @@ if MAINTENANCE_MODE and not st.session_state["admin_unlocked"]:
     st.stop()
 
 # ==============================================================================
-# OPENROUTER CLIENT & VISION ENGINE
+# NATIVE GEMINI CLIENT & VISION ENGINE
 # ==============================================================================
-def get_openrouter_client():
-    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
-    return OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=api_key,
-    )
+def get_gemini_client():
+    api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+    return genai.Client(api_key=api_key)
 
 def load_and_optimize_image(uploaded_file):
     img = Image.open(uploaded_file)
@@ -259,21 +257,11 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 def analyze_chart(images: list, prompt: str) -> str:
-    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
+    api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
     if not api_key:
-        raise RuntimeError("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
+        raise RuntimeError("Gemini API key not configured. Please add GEMINI_API_KEY to your Streamlit secrets.")
 
-    client = get_openrouter_client()
-    
-    content_payload = []
-    for img in images:
-        buffered = io.BytesIO()
-        img.save(buffered, format="JPEG")
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-        content_payload.append({
-            "type": "image_url",
-            "image_url": {"url": f"data:image/jpeg;base64,{img_str}"}
-        })
+    client = get_gemini_client()
     
     full_prompt = (
         prompt + 
@@ -284,19 +272,20 @@ def analyze_chart(images: list, prompt: str) -> str:
         "4. Keep reasons direct and concise (one sentence maximum)."
     )
     
-    content_payload.append({"type": "text", "text": full_prompt})
+    # Pass PIL images and prompt directly to the native Gemini SDK contents array
+    contents = images + [full_prompt]
 
-    st.toast("Analyzing via OpenRouter (Gemini 3.6 Flash)", icon="⚡")
+    st.toast("Analyzing via Google Gemini SDK", icon="⚡")
     
-    response = client.chat.completions.create(
-        model="google/gemini-3.6-flash",
-        messages=[{"role": "user", "content": content_payload}]
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=contents
     )
     
-    if response and response.choices:
-        return response.choices[0].message.content
+    if response and response.text:
+        return response.text
 
-    raise Exception("OpenRouter vision request returned empty response.")
+    raise Exception("Gemini vision request returned empty response.")
 
 # ==============================================================================
 # VERDICT EXTRACTION & URGENCY BANNER
@@ -367,7 +356,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by OpenRouter (Gemini 3.6 Flash)")
+st.sidebar.caption("⚡ Powered by Google Gemini SDK")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -426,7 +415,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing OpenRouter vision scan..."):
+            with st.spinner("Executing Gemini vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -462,7 +451,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through OpenRouter..."):
+            with st.spinner("Processing multi-timeframe feed through Gemini..."):
                 try:
                     prompt = """
                     Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
