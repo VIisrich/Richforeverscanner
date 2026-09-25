@@ -130,11 +130,22 @@ st.markdown(f"""
         margin-bottom: 0.6rem;
     }}
     .rf-pill-online {{ background: rgba(46, 204, 113, 0.14); color: #4fe08a; border: 1px solid rgba(46,204,113,0.35); }}
-    .rf-pill-maint {{ background: rgba(255, 157, 92, 0.14); color: #ff9d5c; border: 1px solid rgba(255,157,92,0.35); }}
 
     hr {{ border-color: rgba(255,255,255,0.08) !important; }}
     ::-webkit-scrollbar {{ width: 8px; }}
     ::-webkit-scrollbar-thumb {{ background: #3a2a55; border-radius: 8px; }}
+
+    .rf-bias-pill {{
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        letter-spacing: 0.6px;
+        margin-bottom: 0.8rem;
+    }}
+    .rf-bias-bullish {{ background: rgba(46, 204, 113, 0.15); color: #4fe08a; border: 1px solid rgba(46,204,113,0.45); }}
+    .rf-bias-bearish {{ background: rgba(255, 59, 59, 0.15); color: #ff6a6a; border: 1px solid rgba(255,59,59,0.45); }}
 
     .rf-verdict-banner {{
         display: flex;
@@ -143,7 +154,7 @@ st.markdown(f"""
         gap: 0.65rem;
         padding: 1rem 1.2rem;
         border-radius: 12px;
-        margin: 0.9rem 0 1.3rem 0;
+        margin: 0.5rem 0 1.3rem 0;
         font-size: 1.4rem;
         font-weight: 800;
         letter-spacing: 0.8px;
@@ -193,21 +204,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# GLOBAL MAINTENANCE MODE & SECURE PASSCODE BYPASS
-# ==============================================================================
-MAINTENANCE_MODE = False
-
-if "admin_unlocked" not in st.session_state:
-    st.session_state["admin_unlocked"] = False
-
-if MAINTENANCE_MODE and not st.session_state["admin_unlocked"]:
-    st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("<div class='rf-pill rf-pill-maint'>STATUS: MAINTENANCE 🛠️</div>", unsafe_allow_html=True)
-    st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
-    st.stop()
-
-# ==============================================================================
 # OPENROUTER API CLIENT & VISION ENGINE
 # ==============================================================================
 def get_openrouter_client():
@@ -244,13 +240,16 @@ def analyze_chart(images: list, prompt: str) -> str:
     
     full_prompt = (
         prompt + 
-        "\n\nSTRICT ICT ANALYSIS RULES (Keep reasons simple & direct):\n"
-        "1. Follow ICT price action rules strictly (H1 macro bias, 15m equilibrium discount/premium, 5m FVG confluence, R:R >= 2.0R).\n"
-        "2. Output must clearly state BUY, SELL, or WAIT.\n"
-        "3. Provide exact Stop Loss (SL) and Take Profit (TP) levels if actionable.\n"
-        "4. REASONING:\n"
-        "   - If BUY/SELL: State the core catalyst simply in 1 sentence (e.g., liquidity sweep into 15m discount FVG).\n"
-        "   - If WAIT: State the exact zone or price action condition we are waiting for before entering."
+        "\n\nSTRICT ICT ANALYSIS RULES:\n"
+        "1. Determine Market Bias (BULLISH or BEARISH) based on H1 macro structure.\n"
+        "2. Follow ICT rules strictly (15m equilibrium, 5m FVG confluence, R:R >= 2.0R).\n"
+        "3. Output format must include:\n"
+        "   - **Bias**: [BULLISH / BEARISH]\n"
+        "   - **Verdict**: [BUY / SELL / WAIT]\n"
+        "   - **Target R:R**: [>= 2.0R or N/A]\n"
+        "   - **Stop Loss (SL)**: [Price]\n"
+        "   - **Take Profit (TP)**: [Price]\n"
+        "   - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state the exact price zone/condition we are waiting for.]"
     )
     
     content_list = [{"type": "text", "text": full_prompt}]
@@ -283,8 +282,14 @@ def analyze_chart(images: list, prompt: str) -> str:
     raise Exception(f"All scanner nodes currently busy. Details: {last_exception}")
 
 # ==============================================================================
-# VERDICT EXTRACTION & URGENCY BANNER
+# PARSING & BANNER RENDERING
 # ==============================================================================
+def extract_bias(text: str):
+    match = re.search(r"bias[^\n]{0,50}?\b(BULLISH|BEARISH)\b", text, re.IGNORECASE)
+    if not match:
+        match = re.search(r"\b(BULLISH|BEARISH)\b", text, re.IGNORECASE)
+    return match.group(1).upper() if match else None
+
 def extract_verdict(text: str):
     match = re.search(r"verdict[^\n]{0,80}?\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
     if not match:
@@ -301,6 +306,16 @@ def extract_level(text: str, keyword_pattern: str):
     return value
 
 def render_verdict_banner(text: str):
+    bias = extract_bias(text)
+    if bias:
+        bias_class = "rf-bias-bullish" if bias == "BULLISH" else "rf-bias-bearish"
+        bias_icon = "📈" if bias == "BULLISH" else "📉"
+        st.markdown(f"""
+            <div style="text-align: center;">
+                <span class="rf-bias-pill {bias_class}">{bias_icon} MARKET BIAS: {bias}</span>
+            </div>
+        """, unsafe_allow_html=True)
+
     verdict = extract_verdict(text)
     if not verdict:
         return
@@ -358,11 +373,12 @@ st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
 # ==============================================================================
 ICT_PROMPT = """
 ICT price action analysis:
-1. H1 Macro Bias check.
-2. 15m Equilibrium check.
-3. 5m FVG Confluence.
-4. R:R >= 2.0R validation.
-5. Verdict (BUY, SELL, or WAIT).
+1. Determine Market Bias (Bullish or Bearish).
+2. H1 Macro Bias check.
+3. 15m Equilibrium check.
+4. 5m FVG Confluence.
+5. R:R >= 2.0R validation.
+6. Verdict (BUY, SELL, or WAIT).
 """
 
 # ==============================================================================
@@ -383,11 +399,11 @@ if page == "Home / Dashboard":
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a standalone chart screenshot to scan for Fair Value Gaps, liquidity sweeps, and simple trade rationale instantly.</p>
+            <p>Upload a standalone chart screenshot to scan market bias, Fair Value Gaps, and trade rationale instantly.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multi-TF captures with strict entry triggers, risk-to-reward parameters, and clear wait conditions.</p>
+            <p>Cross-examine multi-TF captures with strict structural bias, risk-to-reward parameters, and clear wait conditions.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -398,7 +414,7 @@ elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
             <h1>📸 Single Chart Analysis</h1>
-            <p>ICT Vision Confluence</p>
+            <p>ICT Vision Confluence & Bias Scanner</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -407,7 +423,7 @@ elif page == "Single-Shot Analysis":
     if uploaded_file is not None:
         image = load_and_optimize_image(uploaded_file)
         st.image(image, caption="Optimized Chart Feed", use_container_width=True)
-        user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG, liquidity, and setup viability.")
+        user_query = st.text_input("Custom instructions:", value="Analyze this chart for market bias, FVG, and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
             with st.spinner("Executing ICT vision scan..."):
@@ -450,6 +466,7 @@ elif page == "Multi-Timeframe Confluence":
                 try:
                     prompt = """
                     Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
+                    - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Price]
