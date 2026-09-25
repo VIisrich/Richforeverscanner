@@ -1,12 +1,10 @@
 import os
 import streamlit as st
+import base64
 from PIL import Image
+import io
 import re
-
-try:
-    import google.generativeai as genai
-except ImportError:
-    genai = None
+from openai import OpenAI
 
 # ==============================================================================
 # CONFIG & SECRETS
@@ -21,7 +19,6 @@ st.set_page_config(
 # ==============================================================================
 # GLOBAL STYLE & IOS APP ICON INJECTION (BASE64 EMBEDDED)
 # ==============================================================================
-import base64
 def get_base64_image(image_path: str) -> str:
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
@@ -198,7 +195,7 @@ st.markdown(f"""
 # ==============================================================================
 # GLOBAL MAINTENANCE MODE & SECURE PASSCODE BYPASS
 # ==============================================================================
-MAINTENANCE_MODE = True
+MAINTENANCE_MODE = False
 
 if "admin_unlocked" not in st.session_state:
     st.session_state["admin_unlocked"] = False
@@ -236,36 +233,60 @@ if MAINTENANCE_MODE and not st.session_state["admin_unlocked"]:
 
     st.stop()
 
-gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
-if gemini_key and genai is not None:
-    genai.configure(api_key=gemini_key)
+# ==============================================================================
+# OPENROUTER CLIENT & VISION ENGINE
+# ==============================================================================
+def get_openrouter_client():
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
+    return OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
 
 def load_and_optimize_image(uploaded_file):
     img = Image.open(uploaded_file)
     img.thumbnail((800, 800))
     return img
 
-# ==============================================================================
-# RICHFOREVER AI VISION ENGINE (GEMINI FLASH)
-# ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
-    if not gemini_key:
-        raise RuntimeError("Gemini API key not configured. Please set GEMINI_API_KEY in Streamlit secrets.")
-    if genai is None:
-        raise RuntimeError("google-generativeai package is not installed.")
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
+    if not api_key:
+        raise RuntimeError("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
 
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    client = get_openrouter_client()
     
-    content_payload = list(images)
-    content_payload.append(prompt + "\n\nCRITICAL: Keep all bullet points short and direct. Keep the reason to exactly ONE sentence maximum.")
-
-    st.toast("Analyzing via RichforeverAI Engine", icon="⚡")
-    response = model.generate_content(content_payload)
+    content_payload = []
+    for img in images:
+        buffered = io.BytesIO()
+        img.save(buffered, format="JPEG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        content_payload.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{img_str}"}
+        })
     
-    if response and response.text:
-        return response.text
+    full_prompt = (
+        prompt + 
+        "\n\nSTRICT RULES:\n"
+        "1. Follow ICT price action rules strictly (H1 macro bias, 15m equilibrium discount/premium, 5m FVG confluence, R:R >= 2.0R).\n"
+        "2. Output must clearly state BUY, SELL, or WAIT.\n"
+        "3. Provide exact Stop Loss (SL) and Take Profit (TP) levels if actionable.\n"
+        "4. Keep reasons direct and concise (one sentence maximum)."
+    )
+    
+    content_payload.append({"type": "text", "text": full_prompt})
 
-    raise Exception("Vision request returned empty response.")
+    st.toast("Analyzing via OpenRouter (Gemini 3.6 Flash)", icon="⚡")
+    
+    response = client.chat.completions.create(
+        model="google/gemini-3.6-flash",
+        messages=[{"role": "user", "content": content_payload}]
+    )
+    
+    if response and response.choices:
+        return response.choices[0].message.content
+
+    raise Exception("OpenRouter vision request returned empty response.")
 
 # ==============================================================================
 # VERDICT EXTRACTION & URGENCY BANNER
@@ -336,7 +357,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by RichforeverAI")
+st.sidebar.caption("⚡ Powered by OpenRouter (Gemini 3.6 Flash)")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -387,10 +408,6 @@ elif page == "Single-Shot Analysis":
         </div>
     """, unsafe_allow_html=True)
 
-    if not gemini_key:
-        st.error("⚠️ No Gemini API key configured. Please add GEMINI_API_KEY to your Streamlit secrets.")
-        st.stop()
-
     uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
@@ -399,7 +416,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing RichforeverAI vision scan..."):
+            with st.spinner("Executing OpenRouter vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -423,10 +440,6 @@ elif page == "Multi-Timeframe Confluence":
         </div>
     """, unsafe_allow_html=True)
 
-    if not gemini_key:
-        st.error("⚠️ No Gemini API key configured. Please add GEMINI_API_KEY to your Streamlit secrets.")
-        st.stop()
-
     uploaded_files = st.file_uploader("Upload multiple timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
     if uploaded_files:
@@ -439,7 +452,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through RichforeverAI..."):
+            with st.spinner("Processing multi-timeframe feed through OpenRouter..."):
                 try:
                     prompt = """
                     Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
