@@ -257,7 +257,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# GEMINI 3.8 FLASH VISION ENGINE (FIXED TOKEN LIMIT)
+# GEMINI 3.8 FLASH VISION ENGINE (OPTIMIZED TOKEN LIMIT & BREVITY)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -285,7 +285,7 @@ def analyze_chart(images: list, prompt: str) -> str:
         })
     content_parts.append({
         "type": "text",
-        "text": prompt
+        "text": prompt + "\n\nCRITICAL: Keep all bullet points short and direct. Do not write long paragraphs."
     })
 
     st.toast("Analyzing via RichforeverAI (Gemini 3.8 Flash)", icon="⚡")
@@ -297,7 +297,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 "content": content_parts
             }
         ],
-        max_tokens=800  # <--- Increased to 1500 so reports never cut off mid-sentence
+        max_tokens=1000
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
@@ -480,12 +480,12 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Processing multi-timeframe feed through Gemini 3.8..."):
                 try:
                     prompt = """
-                    Analyze multi-TF charts (H1, 15m, 5m):
+                    Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Price]
                     - **Take Profit (TP)**: [Price]
-                    - **Quick Note**: [Reason]
+                    - **Reason**: [One short sentence max]
                     """
 
                     result_text = analyze_chart(
