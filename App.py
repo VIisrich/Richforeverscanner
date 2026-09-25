@@ -278,7 +278,7 @@ def analyze_chart(images: list, prompt: str) -> str:
     st.toast("Analyzing via Google Gemini SDK", icon="⚡")
     
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.8-flash",
         contents=contents
     )
     
@@ -356,7 +356,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Google Gemini SDK")
+st.sidebar.caption("⚡ Powered by Google Gemini SDK (gemini-3.8-flash)")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
