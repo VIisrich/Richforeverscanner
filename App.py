@@ -165,6 +165,37 @@ st.markdown(f"""
         0%, 100% {{ box-shadow: 0 0 0 0 var(--rf-glow); }}
         50% {{ box-shadow: 0 0 26px 7px var(--rf-glow); }}
     }}
+
+    .rf-levels-row {{
+        display: flex;
+        gap: 0.8rem;
+        margin: -0.4rem 0 1.3rem 0;
+    }}
+    .rf-level-card {{
+        flex: 1;
+        border-radius: 12px;
+        padding: 0.75rem 0.9rem;
+        text-align: center;
+    }}
+    .rf-level-label {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        opacity: 0.85;
+        margin-bottom: 0.3rem;
+    }}
+    .rf-level-value {{
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }}
+    .rf-level-sl {{ background: rgba(255, 59, 59, 0.12); border: 1px solid rgba(255, 59, 59, 0.4); color: #ff6a6a; }}
+    .rf-level-tp {{ background: rgba(46, 204, 113, 0.12); border: 1px solid rgba(46, 204, 113, 0.4); color: #4fe08a; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -182,7 +213,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# RELIABLE OPENROUTER VISION ENGINE (CLAUDE SONNET 4.6)
+# RELIABLE OPENROUTER VISION ENGINE (CLAUDE 3.5 SONNET)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -213,9 +244,9 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    st.toast("Analyzing via RichforeverAI", icon="⚡")
+    st.toast("Analyzing via Claude 3.5 Sonnet...", icon="⚡")
     response = client.chat.completions.create(
-        model="anthropic/claude-sonnet-4.6",
+        model="anthropic/claude-3.5-sonnet",
         messages=[
             {
                 "role": "user",
@@ -224,7 +255,6 @@ def analyze_chart(images: list, prompt: str) -> str:
         ],
         max_tokens=1200
     )
-    
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
 
@@ -242,9 +272,21 @@ def extract_verdict(text: str):
         match = re.search(r"\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
     return match.group(1).upper() if match else None
 
+def extract_level(text: str, keyword_pattern: str):
+    """Pulls a labeled price level (e.g. Stop Loss / Take Profit) out of the
+    model's report text, stripping stray markdown around the value."""
+    match = re.search(rf"{keyword_pattern}[^:\n]*:\s*\*{{0,2}}([^\n*]+)", text, re.IGNORECASE)
+    if not match:
+        return None
+    value = match.group(1).strip(" *_-")
+    if not value or value.upper() in ("N/A", "NA", "NONE"):
+        return None
+    return value
+
 def render_verdict_banner(text: str):
     """Renders a big, color-coded, pulsing banner above the report so the
-    call-to-action (or lack thereof) is impossible to miss."""
+    call-to-action (or lack thereof) is impossible to miss, plus SL/TP
+    stat cards underneath it when the model reported them."""
     verdict = extract_verdict(text)
     if not verdict:
         return
@@ -267,6 +309,22 @@ def render_verdict_banner(text: str):
         </div>
     """, unsafe_allow_html=True)
 
+    if verdict in ("BUY", "SELL"):
+        sl = extract_level(text, r"stop\s*loss(?:\s*\(sl\))?")
+        tp = extract_level(text, r"take\s*profit(?:\s*\(tp\))?")
+        if sl or tp:
+            sl_html = f"""
+                <div class="rf-level-card rf-level-sl">
+                    <div class="rf-level-label">🛑 STOP LOSS</div>
+                    <div class="rf-level-value">{sl or '—'}</div>
+                </div>""" if sl else ""
+            tp_html = f"""
+                <div class="rf-level-card rf-level-tp">
+                    <div class="rf-level-label">🎯 TAKE PROFIT</div>
+                    <div class="rf-level-value">{tp or '—'}</div>
+                </div>""" if tp else ""
+            st.markdown(f"""<div class="rf-levels-row">{sl_html}{tp_html}</div>""", unsafe_allow_html=True)
+
 # ==============================================================================
 # SIDEBAR NAVIGATION
 # ==============================================================================
@@ -280,7 +338,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Claude Sonnet via OpenRouter")
+st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -308,7 +366,7 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Claude Sonnet Vision Active</h4>
+            <h4>⚡ Claude 3.5 Sonnet Vision Active</h4>
             <p>Using Anthropic's state-of-the-art multimodal reasoning engine via OpenRouter for precise rule checking and setup filtering.</p>
         </div>
         <div class="rf-card">
