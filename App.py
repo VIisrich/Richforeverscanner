@@ -1,14 +1,12 @@
 import os
 import streamlit as st
-import base64
 from PIL import Image
-import io
 import re
 
 try:
-    from openai import OpenAI
+    import google.generativeai as genai
 except ImportError:
-    OpenAI = None
+    genai = None
 
 # ==============================================================================
 # CONFIG & SECRETS
@@ -23,6 +21,7 @@ st.set_page_config(
 # ==============================================================================
 # GLOBAL STYLE & IOS APP ICON INJECTION (BASE64 EMBEDDED)
 # ==============================================================================
+import base64
 def get_base64_image(image_path: str) -> str:
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
@@ -237,65 +236,34 @@ if MAINTENANCE_MODE and not st.session_state["admin_unlocked"]:
 
     st.stop()
 
-openrouter_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
-
-def _pil_to_b64_jpeg(img):
-    buf = io.BytesIO()
-    if img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
-    img.save(buf, format="JPEG", quality=80)
-    return base64.b64encode(buf.getvalue()).decode()
+gemini_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+if gemini_key and genai is not None:
+    genai.configure(api_key=gemini_key)
 
 def load_and_optimize_image(uploaded_file):
     img = Image.open(uploaded_file)
-    img.thumbnail((700, 700))
+    img.thumbnail((800, 800))
     return img
 
 # ==============================================================================
-# RICHFOREVER AI VISION ENGINE
+# RICHFOREVER AI VISION ENGINE (GEMINI FLASH)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
-    if not openrouter_key:
-        raise RuntimeError("OpenRouter API key not configured. Please set OPENROUTER_API_KEY in secrets.")
-    if OpenAI is None:
-        raise RuntimeError("openai package is not installed.")
+    if not gemini_key:
+        raise RuntimeError("Gemini API key not configured. Please set GEMINI_API_KEY in Streamlit secrets.")
+    if genai is None:
+        raise RuntimeError("google-generativeai package is not installed.")
 
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=openrouter_key,
-        default_headers={
-            "HTTP-Referer": "https://richforever.ai",
-            "X-Title": "RichforeverAI"
-        }
-    )
-
-    content_parts = []
-    for img in images:
-        b64_data = _pil_to_b64_jpeg(img)
-        content_parts.append({
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:image/jpeg;base64,{b64_data}"
-            }
-        })
-    content_parts.append({
-        "type": "text",
-        "text": prompt + "\n\nCRITICAL: Keep all bullet points short, direct, and complete."
-    })
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    content_payload = list(images)
+    content_payload.append(prompt + "\n\nCRITICAL: Keep all bullet points short and direct. Keep the reason to exactly ONE sentence maximum.")
 
     st.toast("Analyzing via RichforeverAI Engine", icon="⚡")
-    response = client.chat.completions.create(
-        model="openai/gpt-4o-mini",
-        messages=[
-            {
-                "role": "user",
-                "content": content_parts
-            }
-        ],
-        max_tokens=600
-    )
-    if response and response.choices and response.choices[0].message.content:
-        return response.choices[0].message.content
+    response = model.generate_content(content_payload)
+    
+    if response and response.text:
+        return response.text
 
     raise Exception("Vision request returned empty response.")
 
@@ -419,8 +387,8 @@ elif page == "Single-Shot Analysis":
         </div>
     """, unsafe_allow_html=True)
 
-    if not openrouter_key:
-        st.error("⚠️ No OpenRouter API key configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
+    if not gemini_key:
+        st.error("⚠️ No Gemini API key configured. Please add GEMINI_API_KEY to your Streamlit secrets.")
         st.stop()
 
     uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
@@ -455,8 +423,8 @@ elif page == "Multi-Timeframe Confluence":
         </div>
     """, unsafe_allow_html=True)
 
-    if not openrouter_key:
-        st.error("⚠️ No OpenRouter API key configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
+    if not gemini_key:
+        st.error("⚠️ No Gemini API key configured. Please add GEMINI_API_KEY to your Streamlit secrets.")
         st.stop()
 
     uploaded_files = st.file_uploader("Upload multiple timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
@@ -479,7 +447,7 @@ elif page == "Multi-Timeframe Confluence":
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Price]
                     - **Take Profit (TP)**: [Price]
-                    - **Reason**: [One sentence maximum]
+                    - **Reason**: [Exactly one sentence maximum]
                     """
 
                     result_text = analyze_chart(
