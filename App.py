@@ -297,7 +297,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 "content": content_parts
             }
         ],
-        max_tokens=1500  # <--- Increased to 1500 so reports never cut off mid-sentence
+        max_tokens=800  # <--- Increased to 1500 so reports never cut off mid-sentence
     )
     if response and response.choices and response.choices[0].message.content:
         return response.choices[0].message.content
