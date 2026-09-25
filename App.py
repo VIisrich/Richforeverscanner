@@ -154,7 +154,7 @@ def load_and_optimize_image(uploaded_file):
     return img
 
 # ==============================================================================
-# RELIABLE OPENROUTER VISION ENGINE (GEMINI 2.5 FLASH)
+# RELIABLE OPENROUTER VISION ENGINE (CLAUDE 3.5 SONNET)
 # ==============================================================================
 def analyze_chart(images: list, prompt: str) -> str:
     if not openrouter_key:
@@ -185,9 +185,9 @@ def analyze_chart(images: list, prompt: str) -> str:
         "text": prompt
     })
 
-    st.toast("Analyzing via Gemini 2.5 Flash...", icon="⚡")
+    st.toast("Analyzing via Claude 3.5 Sonnet...", icon="⚡")
     response = client.chat.completions.create(
-        model="google/gemini-2.5-flash",
+        model="anthropic/claude-3.5-sonnet",
         messages=[
             {
                 "role": "user",
@@ -214,7 +214,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Gemini 2.5 Flash via OpenRouter")
+st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -242,8 +242,8 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Gemini 2.5 Flash Vision Active</h4>
-            <p>Using Google's multimodal engine via OpenRouter for high-speed, reliable chart scans and setup filtering.</p>
+            <h4>⚡ Claude 3.5 Sonnet Vision Active</h4>
+            <p>Using Anthropic's state-of-the-art multimodal reasoning engine via OpenRouter for precise rule checking and setup filtering.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
@@ -278,7 +278,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing Gemini vision scan..."):
+            with st.spinner("Executing Claude vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -317,7 +317,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through Gemini..."):
+            with st.spinner("Processing multi-timeframe feed through Claude..."):
                 try:
                     prompt = """
                     You are the RichforeverAI Vision Engine using exact ICT rules.
