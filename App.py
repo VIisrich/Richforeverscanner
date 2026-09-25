@@ -3,6 +3,7 @@ import streamlit as st
 import base64
 from PIL import Image
 import io
+import re
 
 try:
     from openai import OpenAI
@@ -133,6 +134,7 @@ st.markdown(f"""
         margin-bottom: 0.6rem;
     }}
     .rf-pill-online {{ background: rgba(46, 204, 113, 0.14); color: #4fe08a; border: 1px solid rgba(46,204,113,0.35); }}
+    .rf-pill-maint {{ background: rgba(255, 157, 92, 0.14); color: #ff9d5c; border: 1px solid rgba(255,157,92,0.35); }}
 
     hr {{ border-color: rgba(255,255,255,0.08) !important; }}
     ::-webkit-scrollbar {{ width: 8px; }}
@@ -198,6 +200,33 @@ st.markdown(f"""
     .rf-level-tp {{ background: rgba(46, 204, 113, 0.12); border: 1px solid rgba(46, 204, 113, 0.4); color: #4fe08a; }}
     </style>
 """, unsafe_allow_html=True)
+
+# ==============================================================================
+# GLOBAL MAINTENANCE MODE & ADMIN BYPASS
+# ==============================================================================
+MAINTENANCE_MODE = True
+query_params = st.query_params
+is_admin_testing = query_params.get("mode") == "test"
+
+if MAINTENANCE_MODE and not is_admin_testing:
+    st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("<div class='rf-pill rf-pill-maint'>STATUS: MAINTENANCE 🛠️</div>", unsafe_allow_html=True)
+    st.sidebar.caption("⚡ Estimated back online around 2:30 PM")
+
+    st.markdown("""
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 72vh; text-align: center; padding: 1rem;">
+            <div style="font-size: 3.8rem; margin-bottom: 0.8rem;">🛠️</div>
+            <h1 style="font-size: 2.3rem; font-weight: 800; background: linear-gradient(90deg, #ff5b5b, #ff9d5c 45%, #a06bff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.6rem;">SYSTEM MAINTENANCE</h1>
+            <p style="color: #9a9fb5; font-size: 1.02rem; max-width: 480px; line-height: 1.6; margin-bottom: 1.6rem;">
+                RichforeverAI is currently undergoing scheduled backend updates and scanner optimizations. All analysis suites are temporarily offline.
+            </p>
+            <div style="background: rgba(255,157,92,0.1); border: 1px solid rgba(255,157,92,0.35); border-radius: 14px; padding: 0.9rem 1.5rem; color: #ff9d5c; font-weight: 600; font-size: 0.96rem; letter-spacing: 0.3px;">
+                ⏳ Estimated Completion: Around <strong>2:30 PM</strong>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    st.stop()
 
 openrouter_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
 
@@ -265,8 +294,6 @@ def analyze_chart(images: list, prompt: str) -> str:
 # ==============================================================================
 # VERDICT EXTRACTION & URGENCY BANNER
 # ==============================================================================
-import re
-
 def extract_verdict(text: str):
     """Pulls BUY / SELL / WAIT out of the model's report text."""
     match = re.search(r"verdict[^\n]{0,80}?\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
@@ -275,8 +302,7 @@ def extract_verdict(text: str):
     return match.group(1).upper() if match else None
 
 def extract_level(text: str, keyword_pattern: str):
-    """Pulls a labeled price level (e.g. Stop Loss / Take Profit) out of the
-    model's report text, stripping stray markdown around the value."""
+    """Pulls a labeled price level out of the model's report text."""
     match = re.search(rf"{keyword_pattern}[^:\n]*:\s*\*{{0,2}}([^\n*]+)", text, re.IGNORECASE)
     if not match:
         return None
@@ -286,8 +312,7 @@ def extract_level(text: str, keyword_pattern: str):
     return value
 
 def render_verdict_banner(text: str):
-    """Renders a big, color-coded, pulsing banner above the report so the
-    call-to-action is impossible to miss, plus SL/TP stat cards underneath."""
+    """Renders a big, color-coded, pulsing banner above the report."""
     verdict = extract_verdict(text)
     if not verdict:
         return
@@ -338,11 +363,14 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
+if is_admin_testing:
+    st.sidebar.markdown("<div class='rf-pill rf-pill-maint'>BYPASS ACTIVE 🛠️</div>", unsafe_allow_html=True)
+else:
+    st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
 st.sidebar.caption("⚡ Powered by Claude 3.5 Sonnet via OpenRouter")
 
 # ==============================================================================
-# SHARED ICT ANALYSIS PROMPT (ALIGNED WITH LIVE BOT STRATEGY)
+# SHARED ICT ANALYSIS PROMPT
 # ==============================================================================
 ICT_PROMPT = """
 ICT price action rules:
