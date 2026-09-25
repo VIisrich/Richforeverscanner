@@ -238,21 +238,7 @@ def analyze_chart(images: list, prompt: str) -> str:
 
     client = get_openrouter_client()
     
-    full_prompt = (
-        prompt + 
-        "\n\nSTRICT ICT ANALYSIS RULES:\n"
-        "1. Determine Market Bias (BULLISH or BEARISH) based on H1 macro structure.\n"
-        "2. Follow ICT rules strictly (15m equilibrium, 5m FVG confluence, R:R >= 2.0R).\n"
-        "3. Output format must include:\n"
-        "   - **Bias**: [BULLISH / BEARISH]\n"
-        "   - **Verdict**: [BUY / SELL / WAIT]\n"
-        "   - **Target R:R**: [>= 2.0R or N/A]\n"
-        "   - **Stop Loss (SL)**: [Price]\n"
-        "   - **Take Profit (TP)**: [Price]\n"
-        "   - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state the exact price zone/condition we are waiting for.]"
-    )
-    
-    content_list = [{"type": "text", "text": full_prompt}]
+    content_list = [{"type": "text", "text": prompt}]
     for img in images:
         data_uri = pil_image_to_base64_data_uri(img)
         content_list.append({
@@ -369,19 +355,6 @@ st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 
 st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
 
 # ==============================================================================
-# SHARED ICT ANALYSIS PROMPT
-# ==============================================================================
-ICT_PROMPT = """
-ICT price action analysis:
-1. Determine Market Bias (Bullish or Bearish).
-2. H1 Macro Bias check.
-3. 15m Equilibrium check.
-4. 5m FVG Confluence.
-5. R:R >= 2.0R validation.
-6. Verdict (BUY, SELL, or WAIT).
-"""
-
-# ==============================================================================
 # PAGE 1: HOME / DASHBOARD
 # ==============================================================================
 if page == "Home / Dashboard":
@@ -395,44 +368,57 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>⚡ Live Bot Strategy Alignment</h4>
-            <p>Scanner logic mirrors the automated execution engine: H1 structure bias, 15m equilibrium filters, and 5m FVG retracements.</p>
+            <p>Scanner logic mirrors the automated execution engine: structural bias, equilibrium filters, and FVG retracements.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a standalone chart screenshot to scan market bias, Fair Value Gaps, and trade rationale instantly.</p>
+            <p>Upload a lower-timeframe execution chart to instantly scan bias, simple confluences, and clear SL/TP levels.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multi-TF captures with strict structural bias, risk-to-reward parameters, and clear wait conditions.</p>
+            <p>Cross-examine multi-TF captures with strict entry triggers, risk-to-reward parameters, and clear wait conditions.</p>
         </div>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# PAGE 2: SINGLE-SHOT ANALYSIS
+# PAGE 2: SINGLE-SHOT ANALYSIS (LTF EXECUTION)
 # ==============================================================================
 elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
-            <h1>📸 Single Chart Analysis</h1>
-            <p>ICT Vision Confluence & Bias Scanner</p>
+            <h1>📸 Single Chart LTF Scanner</h1>
+            <p>Lower-Timeframe ICT Execution Setup</p>
         </div>
     """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
+    uploaded_file = st.file_uploader("Upload LTF chart screenshot (1m / 5m / 15m)...", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
         image = load_and_optimize_image(uploaded_file)
-        st.image(image, caption="Optimized Chart Feed", use_container_width=True)
-        user_query = st.text_input("Custom instructions:", value="Analyze this chart for market bias, FVG, and setup viability.")
+        st.image(image, caption="Optimized Execution Feed", use_container_width=True)
+        user_query = st.text_input("Custom notes (optional):", value="Scan for immediate LTF entry setup.")
 
-        if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing ICT vision scan..."):
+        if st.button("RUN LTF PIXEL SCAN"):
+            with st.spinner("Analyzing lower-timeframe setup..."):
                 try:
-                    result_text = analyze_chart(
-                        images=[image],
-                        prompt=f"{ICT_PROMPT}\n\nUser Question: {user_query}"
-                    )
-                    st.markdown("### 📊 Scan Report")
+                    prompt = f"""
+                    Analyze this Lower-Timeframe (LTF) chart using strict ICT execution rules:
+                    1. Determine Bias (BULLISH or BEARISH).
+                    2. Check for simple confluences (Liquidity sweep & FVG retest).
+                    3. Validate R:R >= 2.0R.
+                    4. Output EXACTLY these bullet points with clear, precise levels:
+                       - **Bias**: [BULLISH / BEARISH]
+                       - **Verdict**: [BUY / SELL / WAIT]
+                       - **Target R:R**: [>= 2.0R or N/A]
+                       - **Stop Loss (SL)**: [Exact Price Level]
+                       - **Take Profit (TP)**: [Exact Price Level]
+                       - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state exact price zone or condition we are waiting for.]
+                    
+                    User Notes: {user_query}
+                    """
+
+                    result_text = analyze_chart(images=[image], prompt=prompt)
+                    st.markdown("### 📊 LTF Scan Report")
                     st.success("Scan complete")
                     render_verdict_banner(result_text)
                     st.markdown(result_text)
@@ -469,15 +455,12 @@ elif page == "Multi-Timeframe Confluence":
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Target R:R**: [>= 2.0R or N/A]
-                    - **Stop Loss (SL)**: [Price]
-                    - **Take Profit (TP)**: [Price]
+                    - **Stop Loss (SL)**: [Exact Price]
+                    - **Take Profit (TP)**: [Exact Price]
                     - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state the exact price zone/condition we are waiting for.]
                     """
 
-                    result_text = analyze_chart(
-                        images=optimized_images,
-                        prompt=prompt
-                    )
+                    result_text = analyze_chart(images=optimized_images, prompt=prompt)
                     st.markdown("### 🌐 Confluence Report")
                     st.success("Multi-scan complete")
                     render_verdict_banner(result_text)
