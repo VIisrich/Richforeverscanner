@@ -4,8 +4,7 @@ import base64
 from PIL import Image
 import io
 import re
-from google import genai
-from google.genai import types
+from openai import OpenAI
 
 # ==============================================================================
 # CONFIG & SECRETS
@@ -235,11 +234,14 @@ if MAINTENANCE_MODE and not st.session_state["admin_unlocked"]:
     st.stop()
 
 # ==============================================================================
-# NATIVE GEMINI CLIENT & VISION ENGINE
+# OPENROUTER API CLIENT & VISION ENGINE
 # ==============================================================================
-def get_gemini_client():
-    api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
-    return genai.Client(api_key=api_key)
+def get_openrouter_client():
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))))
+    return OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
 
 def load_and_optimize_image(uploaded_file):
     img = Image.open(uploaded_file)
@@ -255,12 +257,18 @@ def load_and_optimize_image(uploaded_file):
             
     return img
 
-def analyze_chart(images: list, prompt: str) -> str:
-    api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
-    if not api_key:
-        raise RuntimeError("Gemini API key not configured. Please add GEMINI_API_KEY to your Streamlit secrets.")
+def pil_image_to_base64_data_uri(img: Image.Image) -> str:
+    buffered = io.BytesIO()
+    img.save(buffered, format="JPEG")
+    encoded = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    return f"data:image/jpeg;base64,{encoded}"
 
-    client = get_gemini_client()
+def analyze_chart(images: list, prompt: str) -> str:
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))))
+    if not api_key:
+        raise RuntimeError("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
+
+    client = get_openrouter_client()
     
     full_prompt = (
         prompt + 
@@ -271,28 +279,36 @@ def analyze_chart(images: list, prompt: str) -> str:
         "4. Keep reasons direct and concise (one sentence maximum)."
     )
     
-    contents = images + [full_prompt]
+    content_list = [{"type": "text", "text": full_prompt}]
+    for img in images:
+        data_uri = pil_image_to_base64_data_uri(img)
+        content_list.append({
+            "type": "image_url",
+            "image_url": {"url": data_uri}
+        })
     
-    # Clean fallback sequence using strictly valid active Gemini Flash models & alias
-    models_to_try = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-flash-latest"]
+    messages = [{"role": "user", "content": content_list}]
+    
+    # OpenRouter model endpoint rotation
+    models_to_try = ["google/gemini-2.5-flash", "google/gemini-2.5-flash-preview", "google/gemini-flash-1.5"]
     
     last_exception = None
     for model_name in models_to_try:
         try:
-            st.toast(f"Analyzing via Google Gemini SDK ({model_name})", icon="⚡")
-            response = client.models.generate_content(
+            st.toast(f"Analyzing via OpenRouter ({model_name})", icon="⚡")
+            response = client.chat.completions.create(
                 model=model_name,
-                contents=contents
+                messages=messages
             )
-            if response and response.text:
-                return response.text
+            if response and response.choices and response.choices[0].message.content:
+                return response.choices[0].message.content
         except Exception as e:
             last_exception = e
-            if "503" in str(e) or "UNAVAILABLE" in str(e) or "NOT_FOUND" in str(e) or "404" in str(e):
+            if "503" in str(e) or "UNAVAILABLE" in str(e) or "NOT_FOUND" in str(e) or "404" in str(e) or "rate_limit" in str(e):
                 continue
             raise e
             
-    raise Exception(f"All Gemini models are currently unavailable. Details: {last_exception}")
+    raise Exception(f"All OpenRouter models are currently unavailable. Details: {last_exception}")
 
 # ==============================================================================
 # VERDICT EXTRACTION & URGENCY BANNER
@@ -363,7 +379,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Google Gemini SDK (gemini-3.8-flash)")
+st.sidebar.caption("⚡ Powered by OpenRouter (google/gemini-2.5-flash)")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
@@ -422,7 +438,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom instructions:", value="Analyze this chart for FVG and setup viability.")
 
         if st.button("RUN PIXEL SCAN"):
-            with st.spinner("Executing Gemini vision scan..."):
+            with st.spinner("Executing OpenRouter vision scan..."):
                 try:
                     result_text = analyze_chart(
                         images=[image],
@@ -458,7 +474,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed through Gemini..."):
+            with st.spinner("Processing multi-timeframe feed through OpenRouter..."):
                 try:
                     prompt = """
                     Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
