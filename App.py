@@ -245,7 +245,6 @@ def load_and_optimize_image(uploaded_file):
     img = Image.open(uploaded_file)
     img.thumbnail((800, 800))
     
-    # Safely convert RGBA/transparent images to RGB
     if img.mode != "RGB":
         if img.mode == "RGBA":
             rgb_img = Image.new("RGB", img.size, (255, 255, 255))
@@ -274,8 +273,8 @@ def analyze_chart(images: list, prompt: str) -> str:
     
     contents = images + [full_prompt]
     
-    # Prioritize gemini-3.6-flash, with automatic fallback options
-    models_to_try = ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-2.5-flash"]
+    # Clean fallback sequence using strictly valid active Gemini Flash models & alias
+    models_to_try = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-flash-latest"]
     
     last_exception = None
     for model_name in models_to_try:
@@ -289,7 +288,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 return response.text
         except Exception as e:
             last_exception = e
-            if "503" in str(e) or "UNAVAILABLE" in str(e) or "NOT_FOUND" in str(e):
+            if "503" in str(e) or "UNAVAILABLE" in str(e) or "NOT_FOUND" in str(e) or "404" in str(e):
                 continue
             raise e
             
@@ -364,7 +363,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Google Gemini SDK (gemini-3.6-flash)")
+st.sidebar.caption("⚡ Powered by Google Gemini SDK (gemini-3.8-flash)")
 
 # ==============================================================================
 # SHARED ICT ANALYSIS PROMPT
