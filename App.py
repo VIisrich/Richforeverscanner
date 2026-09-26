@@ -102,6 +102,18 @@ st.markdown(f"""
     }}
     .rf-card p {{ margin: 0; color: #c4c8da; font-size: 0.92rem; line-height: 1.5; }}
 
+    .rf-disclaimer-card {{
+        background: rgba(255, 59, 59, 0.05);
+        border: 1px solid rgba(255, 59, 59, 0.2);
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        margin-bottom: 0.9rem;
+        font-size: 0.85rem;
+        color: #d1d5db;
+        line-height: 1.5;
+    }}
+    .rf-disclaimer-card b {{ color: #ff6a6a; }}
+
     section[data-testid="stSidebar"] {{
         background: linear-gradient(180deg, #12101c 0%, #0b0c14 100%);
         border-right: 1px solid rgba(255,255,255,0.06);
@@ -340,7 +352,7 @@ def render_verdict_banner(text: str):
             st.markdown(f"""<div class="rf-levels-row">{sl_html}{tp_html}</div>""", unsafe_allow_html=True)
 
 # ==============================================================================
-# SIDEBAR NAVIGATION
+# SIDEBAR NAVIGATION & LEGAL FOOTER
 # ==============================================================================
 st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)
 
@@ -353,6 +365,11 @@ page = st.sidebar.radio(
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
 st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
+st.sidebar.markdown("""
+<div style="font-size: 0.73rem; color: #8a8f9d; line-height: 1.4; margin-top: 0.8rem; padding: 0.4rem 0;">
+    <b>Risk Disclaimer:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical tool only. Past performance does not guarantee future results. By using this software, you agree to our Terms of Service and acknowledge that you use this tool entirely at your own risk. The developer is not liable for any trading losses incurred.
+</div>
+""", unsafe_allow_html=True)
 
 # ==============================================================================
 # PAGE 1: HOME / DASHBOARD
@@ -377,6 +394,9 @@ if page == "Home / Dashboard":
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
             <p>Cross-examine multi-TF captures with strict entry triggers, confidence metrics, risk-to-reward parameters, and clear wait conditions.</p>
+        </div>
+        <div class="rf-disclaimer-card">
+            <b>⚠️ Terms of Service & Legal Notice:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical tool only. Past performance does not guarantee future results. By accessing or using this tool, you agree that you do so at your own risk. The creator is not a licensed financial advisor and accepts zero liability for any financial or trading losses incurred.
         </div>
     """, unsafe_allow_html=True)
 
