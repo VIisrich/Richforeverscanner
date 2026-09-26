@@ -10,7 +10,7 @@ from openai import OpenAI
 # CONFIG & SECRETS
 # ==============================================================================
 st.set_page_config(
-    page_title="RichforeverAI - ICT Scanner",
+    page_title="RichforeverAI - ICT Bot Strategy Scanner",
     page_icon="logo.png",
     layout="centered",
     initial_sidebar_state="expanded"
@@ -264,7 +264,7 @@ def analyze_chart(images: list, prompt: str) -> str:
     last_exception = None
     for model_name in models_to_try:
         try:
-            st.toast(f"Analyzing via RichforeverAI Engine...", icon="⚡")
+            st.toast(f"Analyzing via RichforeverAI Bot Engine...", icon="⚡")
             response = client.chat.completions.create(
                 model=model_name,
                 messages=messages
@@ -310,7 +310,7 @@ def render_verdict_banner(text: str):
         bias_icon = "📈" if bias == "BULLISH" else "📉"
         st.markdown(f"""
             <div style="text-align: center;">
-                <span class="rf-bias-pill {bias_class}">{bias_icon} MARKET BIAS: {bias}</span>
+                <span class="rf-bias-pill {bias_class}">{bias_icon} H1 BIAS: {bias}</span>
             </div>
         """, unsafe_allow_html=True)
 
@@ -363,11 +363,11 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER STATUS: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
+st.sidebar.markdown("<div class='rf-pill rf-pill-online'>BOT STRATEGY SCANNER: ONLINE 🟢</div>", unsafe_allow_html=True)
+st.sidebar.caption("⚡ Powered by RichforeverAI Bot Logic")
 st.sidebar.markdown("""
 <div style="font-size: 0.73rem; color: #8a8f9d; line-height: 1.4; margin-top: 0.8rem; padding: 0.4rem 0;">
-    <b>Risk Disclaimer:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical tool only. Past performance does not guarantee future results. By using this software, you agree to our Terms of Service and acknowledge that you use this tool entirely at your own risk. The developer is not liable for any trading losses incurred.
+    <b>Risk Disclaimer:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical tool mirroring the automated execution bot[cite: 2]. Past performance does not guarantee future results. By using this software, you agree to our Terms of Service and acknowledge that you use this tool entirely at your own risk.
 </div>
 """, unsafe_allow_html=True)
 
@@ -378,64 +378,71 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-hero">
             <h1>⚡ RICHFOREVER AI</h1>
-            <p>ICT Vision Confluence & Market Scanner Suite</p>
+            <p>Live Bot Strategy Scanner Suite</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
         <div class="rf-card">
-            <h4>⚡ Live Bot Strategy Alignment</h4>
-            <p>Scanner logic mirrors the automated execution engine: structural bias, equilibrium filters, and FVG retracements.</p>
+            <h4>🤖 Algorithmic Bot Parity</h4>
+            <p>Both single and multi-timeframe scanners enforce the exact rules of the automated execution bot[cite: 2]: H1 20 EMA Bias, 15M Equilibrium Premium/Discount filters, ATR expansion checks, 5M FVG retracements, and minimum 2.0R BSL/SSL targets.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Upload a lower-timeframe execution chart to instantly scan bias, confidence levels, concise confluences, and clear SL/TP levels.</p>
+            <p>Scan execution charts instantly for valid FVG mitigations, swing structural stop losses, and dynamic risk-to-reward targets[cite: 2].</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multi-TF captures with strict entry triggers, confidence metrics, risk-to-reward parameters, and clear wait conditions.</p>
+            <p>Cross-examine multi-TF feeds (H1, M15, M5) for strict FVG alignment, equilibrium positioning, and high-probability entry triggers[cite: 2].</p>
         </div>
         <div class="rf-disclaimer-card">
-            <b>⚠️ Terms of Service & Legal Notice:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical tool only. Past performance does not guarantee future results. By accessing or using this tool, you agree that you do so at your own risk. The creator is not a licensed financial advisor and accepts zero liability for any financial or trading losses incurred.
+            <b>⚠️ Terms of Service & Legal Notice:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical tool only. Past performance does not guarantee future results. By accessing or using this tool, you agree that you do so at your own risk. The creator accepts zero liability for any financial or trading losses incurred.
         </div>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# PAGE 2: SINGLE-SHOT ANALYSIS (LTF EXECUTION - CONCISE FORMAT)
+# PAGE 2: SINGLE-SHOT ANALYSIS (BOT STRATEGY ALIGNED)
 # ==============================================================================
 elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
-            <h1>📸 Single Chart LTF Scanner</h1>
-            <p>Lower-Timeframe ICT Execution Setup</p>
+            <h1>📸 Single Chart Bot Strategy Scanner</h1>
+            <p>Strict H1 + Equilibrium + FVG Execution Check</p>
         </div>
     """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload LTF chart screenshot (1m / 5m / 15m)...", type=["png", "jpg", "jpeg"])
+    uploaded_file = st.file_uploader("Upload chart screenshot (M5/M15/H1)...", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
         image = load_and_optimize_image(uploaded_file)
-        st.image(image, caption="Optimized Execution Feed", use_container_width=True)
-        user_query = st.text_input("Custom notes (optional):", value="Scan for immediate LTF entry setup.")
+        st.image(image, caption="Optimized Bot Inspection Feed", use_container_width=True)
+        user_query = st.text_input("Custom notes / Asset name (e.g., NAS100 or XAUUSD):", value="NAS100")
 
-        if st.button("RUN LTF PIXEL SCAN"):
-            with st.spinner("Analyzing lower-timeframe setup..."):
+        if st.button("RUN BOT STRATEGY SCAN"):
+            with st.spinner("Analyzing chart against RichforeverAI bot parameters..."):
                 try:
                     prompt = f"""
-                    Analyze this chart using strict ICT rules. Output ONLY these exact bullet points concisely, with no extra paragraphs:
+                    You are the vision core for the RichforeverAI algorithmic trading bot[cite: 2]. Analyze this chart strictly using the bot's rule set:
+                    1. **H1 Trend Bias**: Evaluate close vs 20 EMA and recent structure (BULLISH or BEARISH)[cite: 2].
+                    2. **Equilibrium (EQ) Filter**: Check 15M equilibrium midpoint. For BEARISH bias, price must be in premium (above EQ). For BULLISH bias, price must be in discount (below EQ)[cite: 2].
+                    3. **ATR Expansion**: Verify candle range exceeds average volatility noise[cite: 2].
+                    4. **FVG Trigger**: Confirm if price is currently mitigating a valid 5M Fair Value Gap (FVG) aligned with bias[cite: 2].
+                    5. **Risk Management**: Minimum R:R >= 2.0[cite: 2]. Stop loss placed beyond recent 5M swing high/low with minimum floor constraints. Take profit targeting BSL/SSL liquidity pools[cite: 2].
+
+                    Output ONLY these exact bullet points concisely, with no extra paragraphs:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Exact Price]
                     - **Take Profit (TP)**: [Exact Price]
-                    - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state exact price zone or condition we are waiting for.]
+                    - **Reason**: [Concise bot logic rationale: state H1 bias, equilibrium position, FVG touch, and liquidity target pool].
                     
-                    User Notes: {user_query}
+                    Asset / User Notes: {user_query}
                     """
 
                     result_text = analyze_chart(images=[image], prompt=prompt)
-                    st.markdown("### 📊 LTF Scan Report")
+                    st.markdown("### 📊 Bot Strategy Scan Report")
                     st.success("Scan complete")
                     render_verdict_banner(result_text)
                     st.markdown(result_text)
@@ -443,17 +450,17 @@ elif page == "Single-Shot Analysis":
                     st.error(f"⚠️ {e}")
 
 # ==============================================================================
-# PAGE 3: MULTI-TIMEFRAME CONFLUENCE
+# PAGE 3: MULTI-TIMEFRAME CONFLUENCE (BOT STRATEGY ALIGNED)
 # ==============================================================================
 elif page == "Multi-Timeframe Confluence":
     st.markdown("""
         <div class="rf-hero">
-            <h1>🔄 Multi-Timeframe Confluence</h1>
-            <p>Multi-TF Fusion Scan</p>
+            <h1>🔄 Multi-Timeframe Bot Strategy Confluence</h1>
+            <p>H1 Bias + M15 Equilibrium + M5 FVG Fusion</p>
         </div>
     """, unsafe_allow_html=True)
 
-    uploaded_files = st.file_uploader("Upload multiple timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Upload multi-timeframe charts (H1, M15, M5)...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
     if uploaded_files:
         cols = st.columns(min(len(uploaded_files), 3))
@@ -464,22 +471,28 @@ elif page == "Multi-Timeframe Confluence":
             with cols[i % len(cols)]:
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
-        if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Processing multi-timeframe feed..."):
+        if st.button("RUN MULTI-TF BOT CONFLUENCE SCAN"):
+            with st.spinner("Cross-examining multi-timeframe bot logic feeds..."):
                 try:
                     prompt = """
-                    Analyze multi-TF charts (H1, 15m, 5m) using strict ICT rules. Output ONLY these exact bullet points concisely:
+                    You are the multi-timeframe vision core for the RichforeverAI automated bot[cite: 2]. Cross-examine these captures (H1, M15, M5) using strict bot rules:
+                    1. **H1 Trend Bias**: Establish direction via 20 EMA and structural momentum[cite: 2].
+                    2. **M15 Equilibrium Filter**: Ensure price is in premium (> EQ) for shorts or discount (< EQ) for longs[cite: 2].
+                    3. **Multi-TF FVG Confluence**: Check for overlapping 5M and 15M Fair Value Gaps being tested[cite: 2].
+                    4. **Execution & R:R**: Validate minimum 2.0R, swing SL, and BSL/SSL pool TP targets[cite: 2].
+
+                    Output ONLY these exact bullet points concisely:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [>= 2.0R or N/A]
                     - **Stop Loss (SL)**: [Exact Price]
                     - **Take Profit (TP)**: [Exact Price]
-                    - **Reason**: [Simple & concise: For BUY/SELL state core catalyst like liquidity sweep + FVG. For WAIT state the exact price zone/condition we are waiting for.]
+                    - **Reason**: [Concise cross-TF rationale: H1 bias + M15 EQ zone + M5 FVG confluence + BSL/SSL target].
                     """
 
                     result_text = analyze_chart(images=optimized_images, prompt=prompt)
-                    st.markdown("### 🌐 Confluence Report")
+                    st.markdown("### 🌐 Multi-TF Bot Confluence Report")
                     st.success("Multi-scan complete")
                     render_verdict_banner(result_text)
                     st.markdown(result_text)
