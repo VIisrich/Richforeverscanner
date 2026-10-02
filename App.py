@@ -260,7 +260,6 @@ def analyze_chart(images: list, prompt: str) -> str:
     
     messages = [{"role": "user", "content": content_list}]
     
-    # Updated model array: Claude Sonnet is primary, followed by Gemini fallback nodes
     models_to_try = [
         "anthropic/claude-3.5-sonnet",
         "google/gemini-2.5-flash",
@@ -392,11 +391,11 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>📊 Automated Technical Processing</h4>
-            <p>Process single and multi-timeframe charts seamlessly using advanced computer vision models, institutional price action frameworks, and dynamic risk-reward parameters.</p>
+            <p>Process single and multi-timeframe charts seamlessly using advanced computer vision models, institutional price action frameworks, and tight risk-reward parameters.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Scan execution charts instantly for structural confirmation, key swing levels, and optimized target metrics.</p>
+            <p>Scan execution charts instantly for structural confirmation, tight swing levels, and realistic nearest FVG/liquidity targets.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
@@ -434,16 +433,16 @@ elif page == "Single-Shot Analysis":
                     2. **Zone Filtering**: Check key equilibrium zones and discount/premium positioning.
                     3. **Volatility Check**: Verify candle range expansion relative to average market noise.
                     4. **Trigger Evaluation**: Confirm if price is currently mitigating a valid zone aligned with bias.
-                    5. **Risk Management**: Minimum R:R >= 2.0. Stop loss placed beyond recent swing high/low with floor constraints. Take profit targeting primary liquidity pools.
+                    5. **Risk Management & Tight Targets**: Minimum R:R >= 1.5 (capped cleanly between 1.5R and 2.0R). Stop loss placed tightly beyond recent swing high/low with floor constraints. Take profit targeting the **nearest structural pool or M15 FVG/mitigation zone** rather than distant wishful extensions.
 
                     Output ONLY these exact bullet points concisely, with no extra paragraphs:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
-                    - **Target R:R**: [>= 2.0R or N/A]
+                    - **Target R:R**: [1.5R - 2.0R or N/A]
                     - **Stop Loss (SL)**: [Exact Price]
                     - **Take Profit (TP)**: [Exact Price]
-                    - **Reason**: [Concise technical rationale: state trend bias, zone position, trigger status, and target].
+                    - **Reason**: [Concise technical rationale: state trend bias, zone position, trigger status, and nearest realistic target].
                     
                     Asset / User Notes: {user_query}
                     """
@@ -486,16 +485,16 @@ elif page == "Multi-Timeframe Confluence":
                     1. **Higher TF Bias**: Establish structural direction via momentum and moving averages.
                     2. **Mid TF Zone Filter**: Ensure proper premium/discount positioning.
                     3. **Lower TF Confluence**: Check for overlapping zone mitigations and triggers.
-                    4. **Execution & R:R**: Validate minimum 2.0R, swing SL, and liquidity pool TP targets.
+                    4. **Execution & Tight Targets**: Validate controlled 1.5R to 2.0R target cap, swing SL, and nearest structural liquidity pool TP targets.
 
                     Output ONLY these exact bullet points concisely:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
-                    - **Target R:R**: [>= 2.0R or N/A]
+                    - **Target R:R**: [1.5R - 2.0R or N/A]
                     - **Stop Loss (SL)**: [Exact Price]
                     - **Take Profit (TP)**: [Exact Price]
-                    - **Reason**: [Concise cross-TF rationale: higher TF bias + zone position + confluence + target].
+                    - **Reason**: [Concise cross-TF rationale: higher TF bias + zone position + confluence + nearest realistic target].
                     """
 
                     result_text = analyze_chart(images=optimized_images, prompt=prompt)
