@@ -259,7 +259,14 @@ def analyze_chart(images: list, prompt: str) -> str:
         })
     
     messages = [{"role": "user", "content": content_list}]
-    models_to_try = ["google/gemini-2.5-flash", "google/gemini-2.5-flash-preview", "google/gemini-flash-1.5"]
+    
+    # Updated model array: Claude Sonnet is primary, followed by Gemini fallback nodes
+    models_to_try = [
+        "anthropic/claude-3.5-sonnet",
+        "google/gemini-2.5-flash",
+        "google/gemini-2.5-flash-preview",
+        "google/gemini-flash-1.5"
+    ]
     
     last_exception = None
     for model_name in models_to_try:
