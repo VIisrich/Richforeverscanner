@@ -391,15 +391,15 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>📊 Automated Technical Processing</h4>
-            <p>Process single and multi-timeframe charts seamlessly using advanced computer vision models, institutional price action frameworks, and tight risk-reward parameters.</p>
+            <p>Process single and multi-timeframe charts seamlessly using advanced computer vision models, institutional price action frameworks, and ICT protected swing placement.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Scan execution charts instantly for structural confirmation, tight swing levels, and realistic nearest FVG/liquidity targets.</p>
+            <p>Scan execution charts instantly for structural confirmation, ICT protected high/low stop losses, and realistic nearest FVG/liquidity targets.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multi-timeframe market feeds for structural alignment, zone testing, and high-probability setup verification.</p>
+            <p>Cross-examine multi-timeframe market feeds for structural alignment, fractal zone testing, and high-probability setup verification.</p>
         </div>
         <div class="rf-disclaimer-card">
             <b>⚠️ Terms of Service & Legal Notice:</b> Trading involves substantial risk of loss. RichforeverAI is an analytical tool provided strictly for educational and informational purposes. The creator accepts zero liability for any financial or trading losses incurred.
@@ -413,7 +413,7 @@ elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
             <h1>📸 Single Chart Technical Scanner</h1>
-            <p>Multi-Factor Price Action & Structure Review</p>
+            <p>ICT Protected Structure & Tight Targets Review</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -428,21 +428,21 @@ elif page == "Single-Shot Analysis":
             with st.spinner("Analyzing chart parameters..."):
                 try:
                     prompt = f"""
-                    You are an expert quantitative technical analyst. Analyze this chart strictly using professional market structure rules:
+                    You are an expert ICT quantitative technical analyst. Analyze this chart strictly using professional market structure rules:
                     1. **Trend Bias**: Evaluate momentum and recent structure (BULLISH or BEARISH).
                     2. **Zone Filtering**: Check key equilibrium zones and discount/premium positioning.
-                    3. **Volatility Check**: Verify candle range expansion relative to average market noise.
-                    4. **Trigger Evaluation**: Confirm if price is currently mitigating a valid zone aligned with bias.
-                    5. **Risk Management & Tight Targets**: Minimum R:R >= 1.5 (capped cleanly between 1.5R and 2.0R). Stop loss placed tightly beyond recent swing high/low with floor constraints. Take profit targeting the **nearest structural pool or M15 FVG/mitigation zone** rather than distant wishful extensions.
+                    3. **Trigger Evaluation**: Confirm if price is currently mitigating a valid FVG / liquidity zone aligned with bias.
+                    4. **ICT Protected Stop Loss (SL)**: Place stop loss strictly beyond the nearest **ICT Protected High** (for shorts) or **Protected Low** (for longs)—the fractal pivot point guarding the market structure boundary—plus a clean volatility buffer.
+                    5. **Tight Take Profit (TP)**: Minimum R:R >= 1.5 (capped cleanly between 1.5R and 2.0R). Target the **nearest structural pool or M15 FVG/mitigation zone** rather than distant wishful extensions.
 
                     Output ONLY these exact bullet points concisely, with no extra paragraphs:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [1.5R - 2.0R or N/A]
-                    - **Stop Loss (SL)**: [Exact Price]
-                    - **Take Profit (TP)**: [Exact Price]
-                    - **Reason**: [Concise technical rationale: state trend bias, zone position, trigger status, and nearest realistic target].
+                    - **Stop Loss (SL)**: [Exact Price - placed behind ICT Protected High/Low]
+                    - **Take Profit (TP)**: [Exact Price - nearest FVG/pool]
+                    - **Reason**: [Concise technical rationale: state trend bias, zone position, ICT protected pivot SL placement, and nearest realistic target].
                     
                     Asset / User Notes: {user_query}
                     """
@@ -462,7 +462,7 @@ elif page == "Multi-Timeframe Confluence":
     st.markdown("""
         <div class="rf-hero">
             <h1>🔄 Multi-Timeframe Confluence Scan</h1>
-            <p>Multi-Horizon Structure & Zone Alignment</p>
+            <p>Multi-Horizon ICT Structure & Zone Alignment</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -481,20 +481,20 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Cross-examining multi-timeframe feeds..."):
                 try:
                     prompt = """
-                    You are an expert multi-timeframe technical analyst. Cross-examine these chart captures using strict multi-horizon rules:
-                    1. **Higher TF Bias**: Establish structural direction via momentum and moving averages.
+                    You are an expert multi-timeframe ICT technical analyst. Cross-examine these chart captures using strict multi-horizon rules:
+                    1. **Higher TF Bias**: Establish structural direction via momentum.
                     2. **Mid TF Zone Filter**: Ensure proper premium/discount positioning.
                     3. **Lower TF Confluence**: Check for overlapping zone mitigations and triggers.
-                    4. **Execution & Tight Targets**: Validate controlled 1.5R to 2.0R target cap, swing SL, and nearest structural liquidity pool TP targets.
+                    4. **ICT Protected SL & Tight TPs**: Stop loss placed strictly beyond the nearest **ICT Protected High/Low** fractal structural pivot. Take profit targeting the nearest structural liquidity pool / FVG with a controlled 1.5R to 2.0R cap.
 
                     Output ONLY these exact bullet points concisely:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [1.5R - 2.0R or N/A]
-                    - **Stop Loss (SL)**: [Exact Price]
-                    - **Take Profit (TP)**: [Exact Price]
-                    - **Reason**: [Concise cross-TF rationale: higher TF bias + zone position + confluence + nearest realistic target].
+                    - **Stop Loss (SL)**: [Exact Price - behind ICT Protected High/Low]
+                    - **Take Profit (TP)**: [Exact Price - nearest FVG/pool]
+                    - **Reason**: [Concise cross-TF rationale: higher TF bias + zone position + ICT protected SL placement + nearest realistic target].
                     """
 
                     result_text = analyze_chart(images=optimized_images, prompt=prompt)
