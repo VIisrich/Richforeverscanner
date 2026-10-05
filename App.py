@@ -270,7 +270,7 @@ def analyze_chart(images: list, prompt: str) -> str:
     last_exception = None
     for model_name in models_to_try:
         try:
-            st.toast(f"Analyzing via RichforeverAI Engine...", icon="⚡")
+            st.toast("Analyzing via RichforeverAI Engine...", icon="⚡")
             response = client.chat.completions.create(
                 model=model_name,
                 messages=messages
