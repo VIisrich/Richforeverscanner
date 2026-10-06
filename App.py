@@ -428,21 +428,21 @@ elif page == "Single-Shot Analysis":
             with st.spinner("Analyzing chart parameters via Claude Haiku 4.5..."):
                 try:
                     prompt = f"""
-                    You are an expert ICT quantitative technical analyst. Analyze this chart strictly using professional market structure rules:
-                    1. **Trend Bias**: Evaluate momentum and recent structure (BULLISH or BEARISH).
-                    2. **Zone Filtering**: Check key equilibrium zones and discount/premium positioning.
-                    3. **Trigger Evaluation**: Confirm if price is currently mitigating a valid FVG / liquidity zone aligned with bias.
-                    4. **ICT Protected Stop Loss (SL)**: Provide the exact numeric price level behind the nearest **ICT Protected High/Low**.
-                    5. **Tight Take Profit (TP)**: Provide the exact numeric price level targeting the nearest structural pool or FVG (R:R 1.5R to 2.0R).
+                    You are an expert ICT quantitative technical analyst. Analyze this chart strictly using the exact rules of the RichforeverAI backtest engine:
+                    1. **1H EMA Trend Bias**: Check trend orientation relative to the 20 EMA (Bullish: price above EMA 20 and rising; Bearish: price below EMA 20 and falling).
+                    2. **15M Equilibrium Zone Filter**: Determine the midpoint equilibrium (High + Low / 2). Bearish setups require price to be in the **Premium zone** (above equilibrium); Bullish setups require price to be in the **Discount zone** (below equilibrium).
+                    3. **FVG Mitigation**: Confirm if price is actively mitigating a valid Fair Value Gap (FVG).
+                    4. **ICT Protected Stop Loss (SL)**: Place the stop loss strictly behind the nearest **ICT Protected High/Low** swing fractal.
+                    5. **Target R:R**: Target the nearest structural liquidity pool (BSL/SSL) or FVG with a minimum 2.0R ratio.
 
-                    Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers so they are easy to copy and paste. Keep the Reason brief (1-2 short sentences stating what to expect and what to wait for):
+                    Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers so they are easy to copy and paste. Keep the Reason brief (1-2 short sentences):
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
-                    - **Target R:R**: [1.5R - 2.0R or N/A]
+                    - **Target R:R**: [2.0R or higher]
                     - **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]
                     - **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]
-                    - **Reason**: [1-2 short sentences: state what is happening, what to expect, and what exact trigger/zone to wait for].
+                    - **Reason**: [1-2 short sentences: state EMA trend, equilibrium zone check, FVG mitigation, and protected swing level].
                     
                     Asset / User Notes: {user_query}
                     """
@@ -481,16 +481,20 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Cross-examining multi-timeframe feeds via Claude Haiku 4.5..."):
                 try:
                     prompt = """
-                    You are an expert multi-timeframe ICT technical analyst. Cross-examine these chart captures into ONE unified trade plan (do not break down by individual timeframes).
-                    
+                    You are an expert multi-timeframe ICT quantitative analyst. Cross-examine these chart captures into ONE unified trade plan matching the backtest bot rules (do not break down by individual timeframes):
+                    1. **1H EMA Bias & 15M Equilibrium**: Verify 1H EMA trend alignment and ensure price is in the correct Premium (for bearish) or Discount (for bullish) equilibrium zone.
+                    2. **FVG Confluence**: Confirm overlapping FVG mitigation.
+                    3. **ICT Protected Stop Loss**: Lock SL strictly behind the structural **ICT Protected High/Low** fractal.
+                    4. **Take Profit**: Target clean structural BSL/SSL pools with a minimum 2.0R ratio.
+
                     Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers for easy copy-pasting. Keep the Reason brief (1-2 short sentences):
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
-                    - **Target R:R**: [1.5R - 2.0R or N/A]
+                    - **Target R:R**: [2.0R or higher]
                     - **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]
                     - **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]
-                    - **Reason**: [1-2 short sentences: overall cross-TF alignment, what to expect, and what exact trigger or zone to wait for].
+                    - **Reason**: [1-2 short sentences: cross-TF EMA trend, equilibrium check, FVG touch, and protected swing level].
                     """
 
                     result_text = analyze_chart(images=optimized_images, prompt=prompt)
