@@ -426,25 +426,23 @@ elif page == "Single-Shot Analysis":
         if st.button("RUN TECHNICAL SCAN"):
             with st.spinner("Analyzing chart parameters via RichforeverAI Engine..."):
                 try:
-                    prompt = f"""
-                    You are an expert ICT quantitative technical analyst for the RichforeverAI system. Analyze this chart strictly using the exact rules of the RichforeverAI quantitative engine:
-                    1. **1H EMA Trend Bias**: Check trend orientation relative to the 20 EMA (Bullish: price above EMA 20 and rising; Bearish: price below EMA 20 and falling).
-                    2. **15M Equilibrium Zone Filter**: Determine the midpoint equilibrium (High + Low / 2). Bearish setups require price to be in the **Premium zone** (above equilibrium); Bullish setups require price to be in the **Discount zone** (below equilibrium).
-                    3. **FVG Mitigation**: Confirm if price is actively mitigating a valid Fair Value Gap (FVG).
-                    4. **ICT Protected Stop Loss (SL)**: Place the stop loss strictly behind the nearest **ICT Protected High/Low** swing fractal.
-                    5. **High-Probability Take Profit (TP)**: Never place TP directly at a protected high/low (since those are liquidity pools). Target the **next high-probability external liquidity pool or major liquidity target** beyond the immediate structure to ensure a **strict minimum 2.0R ratio**. If $\ge 2.0R$ is not achievable, output Verdict as WAIT.
-
-                    Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers so they are easy to copy and paste. Keep the Reason brief (1-2 short sentences):
-                    - **Bias**: [BULLISH / BEARISH]
-                    - **Verdict**: [BUY / SELL / WAIT]
-                    - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
-                    - **Target R:R**: [2.0R or higher]
-                    - **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]
-                    - **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]
-                    - **Reason**: [1-2 short sentences: state EMA trend, equilibrium check, FVG mitigation, protected swing SL, and next liquidity pool TP target].
-                    
-                    Asset / User Notes: {user_query}
-                    """
+                    prompt = (
+                        "You are an expert ICT quantitative technical analyst for the RichforeverAI system. Analyze this chart strictly using the exact rules of the RichforeverAI quantitative engine:\n"
+                        "1. **1H EMA Trend Bias**: Check trend orientation relative to the 20 EMA (Bullish: price above EMA 20 and rising; Bearish: price below EMA 20 and falling).\n"
+                        "2. **15M Equilibrium Zone Filter**: Determine the midpoint equilibrium (High + Low / 2). Bearish setups require price to be in the **Premium zone** (above equilibrium); Bullish setups require price to be in the **Discount zone** (below equilibrium).\n"
+                        "3. **FVG Mitigation**: Confirm if price is actively mitigating a valid Fair Value Gap (FVG).\n"
+                        "4. **ICT Protected Stop Loss (SL)**: Place the stop loss strictly behind the nearest **ICT Protected High/Low** swing fractal.\n"
+                        "5. **High-Probability Take Profit (TP)**: Never place TP directly at a protected high/low (since those are liquidity pools). Target the **next high-probability external liquidity pool or major liquidity target** beyond the immediate structure to ensure a **strict minimum 2.0R ratio**. If >= 2.0R is not achievable, output Verdict as WAIT.\n\n"
+                        "Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers so they are easy to copy and paste. Keep the Reason brief (1-2 short sentences):\n"
+                        "- **Bias**: [BULLISH / BEARISH]\n"
+                        "- **Verdict**: [BUY / SELL / WAIT]\n"
+                        "- **Confidence**: [High / Medium / Low with % e.g., High (85%)]\n"
+                        "- **Target R:R**: [2.0R or higher]\n"
+                        "- **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]\n"
+                        "- **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]\n"
+                        f"- **Reason**: [1-2 short sentences: state EMA trend, equilibrium check, FVG mitigation, protected swing SL, and next liquidity pool TP target].\n\n"
+                        f"Asset / User Notes: {user_query}"
+                    )
 
                     result_text = analyze_chart(images=[image], prompt=prompt)
                     st.markdown("### 📊 Technical Scan Report")
@@ -479,15 +477,26 @@ elif page == "Multi-Timeframe Confluence":
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
             with st.spinner("Cross-examining multi-timeframe feeds via RichforeverAI Engine..."):
                 try:
-                    prompt = """
-                    You are an expert multi-timeframe ICT quantitative analyst for the RichforeverAI system. Cross-examine these chart captures into ONE unified trade plan matching the RichforeverAI backtest engine rules (do not break down by individual timeframes):
-                    1. **1H EMA Bias & 15M Equilibrium**: Verify 1H EMA trend alignment and ensure price is in the correct Premium (for bearish) or Discount (for bullish) equilibrium zone.
-                    2. **FVG Confluence**: Confirm overlapping FVG mitigation.
-                    3. **ICT Protected Stop Loss**: Lock SL strictly behind the structural **ICT Protected High/Low** fractal.
-                    4. **High-Probability Take Profit (TP)**: Do not place TP on immediate protected highs/lows. Target the **next major external liquidity pool (BSL/SSL)** to guarantee a **strict minimum 2.0R ratio**. If the setup does not yield at least 2.0R cleanly, output Verdict as WAIT.
+                    prompt = (
+                        "You are an expert multi-timeframe ICT quantitative analyst for the RichforeverAI system. Cross-examine these chart captures into ONE unified trade plan matching the RichforeverAI backtest engine rules (do not break down by individual timeframes):\n"
+                        "1. **1H EMA Bias & 15M Equilibrium**: Verify 1H EMA trend alignment and ensure price is in the correct Premium (for bearish) or Discount (for bullish) equilibrium zone.\n"
+                        "2. **FVG Confluence**: Confirm overlapping FVG mitigation.\n"
+                        "3. **ICT Protected Stop Loss**: Lock SL strictly behind the structural **ICT Protected High/Low** fractal.\n"
+                        "4. **High-Probability Take Profit (TP)**: Do not place TP on immediate protected highs/lows. Target the **next major external liquidity pool (BSL/SSL)** to guarantee a **strict minimum 2.0R ratio**. If the setup does not yield at least 2.0R cleanly, output Verdict as WAIT.\n\n"
+                        "Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers for easy copy-pasting. Keep the Reason brief (1-2 short sentences):\n"
+                        "- **Bias**: [BULLISH / BEARISH]\n"
+                        "- **Verdict**: [BUY / SELL / WAIT]\n"
+                        "- **Confidence**: [High / Medium / Low with % e.g., High (85%)]\n"
+                        "- **Target R:R**: [2.0R or higher]\n"
+                        "- **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]\n"
+                        "- **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]\n"
+                        "- **Reason**: [1-2 short sentences: cross-TF EMA trend, equilibrium check, FVG touch, protected swing SL, and next external liquidity target TP]."
+                    )
 
-                    Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers for easy copy-pasting. Keep the Reason brief (1-2 short sentences):
-                    - **Bias**: [BULLISH / BEARISH]
-                    - **Verdict**: [BUY / SELL / WAIT]
-                    - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
-                    - **Target R
+                    result_text = analyze_chart(images=optimized_images, prompt=prompt)
+                    st.markdown("### 🌐 Multi-TF Confluence Report")
+                    st.success("Multi-scan complete")
+                    render_verdict_banner(result_text)
+                    st.markdown(result_text)
+                except Exception as e:
+                    st.error(f"⚠️ {e}")
