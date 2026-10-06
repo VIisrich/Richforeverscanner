@@ -413,7 +413,7 @@ elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
             <h1>📸 Single Chart Technical Scanner</h1>
-            <p>ICT Protected Structure & Tight Targets Review</p>
+            <p>ICT Protected Structure & Clean Price Levels</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -432,17 +432,17 @@ elif page == "Single-Shot Analysis":
                     1. **Trend Bias**: Evaluate momentum and recent structure (BULLISH or BEARISH).
                     2. **Zone Filtering**: Check key equilibrium zones and discount/premium positioning.
                     3. **Trigger Evaluation**: Confirm if price is currently mitigating a valid FVG / liquidity zone aligned with bias.
-                    4. **ICT Protected Stop Loss (SL)**: Place stop loss strictly beyond the nearest **ICT Protected High** (for shorts) or **Protected Low** (for longs)—the fractal pivot point guarding the market structure boundary—plus a clean volatility buffer.
-                    5. **Tight Take Profit (TP)**: Minimum R:R >= 1.5 (capped cleanly between 1.5R and 2.0R). Target the **nearest structural pool or M15 FVG/mitigation zone** rather than distant wishful extensions.
+                    4. **ICT Protected Stop Loss (SL)**: Provide the exact numeric price level behind the nearest **ICT Protected High/Low**.
+                    5. **Tight Take Profit (TP)**: Provide the exact numeric price level targeting the nearest structural pool or FVG (R:R 1.5R to 2.0R).
 
-                    Output ONLY these exact bullet points concisely, using short and simple sentences (no long paragraphs). For the Reason bullet, directly state what to expect and what to wait for:
+                    Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers so they are easy to copy and paste. Keep the Reason brief (1-2 short sentences stating what to expect and what to wait for):
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [1.5R - 2.0R or N/A]
-                    - **Stop Loss (SL)**: [Exact Price - placed behind ICT Protected High/Low]
-                    - **Take Profit (TP)**: [Exact Price - nearest FVG/pool]
-                    - **Reason**: [1-2 short sentences: state current market action, what to expect, and what exact trigger/zone to wait for].
+                    - **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]
+                    - **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]
+                    - **Reason**: [1-2 short sentences: state what is happening, what to expect, and what exact trigger/zone to wait for].
                     
                     Asset / User Notes: {user_query}
                     """
@@ -462,7 +462,7 @@ elif page == "Multi-Timeframe Confluence":
     st.markdown("""
         <div class="rf-hero">
             <h1>🔄 Multi-Timeframe Confluence Scan</h1>
-            <p>Multi-Horizon ICT Structure & Zone Alignment</p>
+            <p>Unified ICT Trade Plan & Clean Price Levels</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -481,20 +481,16 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Cross-examining multi-timeframe feeds via Claude Haiku 4.5..."):
                 try:
                     prompt = """
-                    You are an expert multi-timeframe ICT technical analyst. Cross-examine these chart captures using strict multi-horizon rules:
-                    1. **Higher TF Bias**: Establish structural direction via momentum.
-                    2. **Mid TF Zone Filter**: Ensure proper premium/discount positioning.
-                    3. **Lower TF Confluence**: Check for overlapping zone mitigations and triggers.
-                    4. **ICT Protected SL & Tight TPs**: Stop loss placed strictly beyond the nearest **ICT Protected High/Low** fractal structural pivot. Take profit targeting the nearest structural liquidity pool / FVG with a controlled 1.5R to 2.0R cap.
-
-                    Output ONLY these exact bullet points concisely, using short and simple sentences (no long paragraphs). For the Reason bullet, explicitly state what to expect and what to wait for:
+                    You are an expert multi-timeframe ICT technical analyst. Cross-examine these chart captures into ONE unified trade plan (do not break down by individual timeframes).
+                    
+                    Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers for easy copy-pasting. Keep the Reason brief (1-2 short sentences):
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [1.5R - 2.0R or N/A]
-                    - **Stop Loss (SL)**: [Exact Price - behind ICT Protected High/Low]
-                    - **Take Profit (TP)**: [Exact Price - nearest FVG/pool]
-                    - **Reason**: [1-2 short sentences: state cross-TF alignment, what to expect, and what exact trigger or zone to wait for].
+                    - **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]
+                    - **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]
+                    - **Reason**: [1-2 short sentences: overall cross-TF alignment, what to expect, and what exact trigger or zone to wait for].
                     """
 
                     result_text = analyze_chart(images=optimized_images, prompt=prompt)
