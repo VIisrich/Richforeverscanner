@@ -390,11 +390,11 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>📊 Automated Technical Processing</h4>
-            <p>Process single and multi-timeframe charts seamlessly using RichforeverAI vision, institutional price action frameworks, and ICT protected swing placement.</p>
+            <p>Process single and multi-timeframe charts seamlessly using RichforeverAI vision, institutional price action frameworks, and tight structural risk models.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Scan execution charts instantly for structural confirmation, ICT protected high/low stop losses, next high-probability liquidity targets, and FVG mitigation.</p>
+            <p>Scan execution charts instantly for structural confirmation, tight protected swing stop losses, realistic liquidity targets, and FVG mitigation.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
@@ -412,7 +412,7 @@ elif page == "Single-Shot Analysis":
     st.markdown("""
         <div class="rf-hero">
             <h1>📸 Single Chart Technical Scanner</h1>
-            <p>ICT Protected Structure & Clean Price Levels</p>
+            <p>Precise Entry & Realistic Intraday Risk Management</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -427,20 +427,20 @@ elif page == "Single-Shot Analysis":
             with st.spinner("Analyzing chart parameters via RichforeverAI Engine..."):
                 try:
                     prompt = (
-                        "You are an expert ICT quantitative technical analyst for the RichforeverAI system. Analyze this chart strictly using the exact rules of the RichforeverAI quantitative engine:\n"
+                        "You are an expert ICT quantitative technical analyst for the RichforeverAI system. Analyze this chart strictly using exact institutional price action rules:\n"
                         "1. **1H EMA Trend Bias**: Check trend orientation relative to the 20 EMA (Bullish: price above EMA 20 and rising; Bearish: price below EMA 20 and falling).\n"
-                        "2. **15M Equilibrium Zone Filter**: Determine the midpoint equilibrium (High + Low / 2). Bearish setups require price to be in the **Premium zone** (above equilibrium); Bullish setups require price to be in the **Discount zone** (below equilibrium).\n"
-                        "3. **FVG Mitigation**: Confirm if price is actively mitigating a valid Fair Value Gap (FVG).\n"
-                        "4. **ICT Protected Stop Loss (SL)**: Place the stop loss strictly behind the nearest **ICT Protected High/Low** swing fractal.\n"
-                        "5. **High-Probability Take Profit (TP)**: Never place TP directly at a protected high/low (since those are liquidity pools). Target the **next high-probability external liquidity pool or major liquidity target** beyond the immediate structure to ensure a **strict minimum 2.0R ratio**. If >= 2.0R is not achievable, output Verdict as WAIT.\n\n"
-                        "Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers so they are easy to copy and paste. Keep the Reason brief (1-2 short sentences):\n"
+                        "2. **15M Equilibrium Zone Filter**: Determine midpoint equilibrium (High + Low / 2). Bearish setups require price in the **Premium zone** (above equilibrium); Bullish setups require price in the **Discount zone** (below equilibrium).\n"
+                        "3. **FVG Mitigation**: Confirm active mitigation of a valid Fair Value Gap (FVG).\n"
+                        "4. **Realistic Tight Stop Loss (SL)**: Pinpoint the precise current market entry price visible on the chart. Place the stop loss strictly behind the **immediate local structural swing fractal** (keep SL tight and realistic to current price action, avoiding massive or arbitrary distances).\n"
+                        "5. **Realistic Proportional Take Profit (TP) & Strict 2.0R+**: Never place TP on immediate protected highs/lows (liquidity pools). Target the **next logical liquidity pool or external range liquidity** beyond the structure. Compute the distance so that the reward-to-risk ratio is **strictly 2.0R or higher** based on your tight SL distance. If a realistic $\ge 2.0R$ trade cannot be built cleanly from the current price, output Verdict as WAIT.\n\n"
+                        "Output ONLY these exact bullet points concisely. Format SL and TP as clean numeric price values matching the chart scale precisely. Keep the Reason brief (1-2 short sentences):\n"
                         "- **Bias**: [BULLISH / BEARISH]\n"
                         "- **Verdict**: [BUY / SELL / WAIT]\n"
                         "- **Confidence**: [High / Medium / Low with % e.g., High (85%)]\n"
                         "- **Target R:R**: [2.0R or higher]\n"
-                        "- **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]\n"
-                        "- **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]\n"
-                        f"- **Reason**: [1-2 short sentences: state EMA trend, equilibrium check, FVG mitigation, protected swing SL, and next liquidity pool TP target].\n\n"
+                        "- **Stop Loss (SL)**: [Exact numeric price only, matching chart scale]\n"
+                        "- **Take Profit (TP)**: [Exact numeric price only, matching chart scale]\n"
+                        "- **Reason**: [1-2 short sentences: state entry context, tight structural SL, and realistic liquidity target TP].\n\n"
                         f"Asset / User Notes: {user_query}"
                     )
 
@@ -478,19 +478,19 @@ elif page == "Multi-Timeframe Confluence":
             with st.spinner("Cross-examining multi-timeframe feeds via RichforeverAI Engine..."):
                 try:
                     prompt = (
-                        "You are an expert multi-timeframe ICT quantitative analyst for the RichforeverAI system. Cross-examine these chart captures into ONE unified trade plan matching the RichforeverAI backtest engine rules (do not break down by individual timeframes):\n"
+                        "You are an expert multi-timeframe ICT quantitative analyst for the RichforeverAI system. Cross-examine these chart captures into ONE unified trade plan:\n"
                         "1. **1H EMA Bias & 15M Equilibrium**: Verify 1H EMA trend alignment and ensure price is in the correct Premium (for bearish) or Discount (for bullish) equilibrium zone.\n"
                         "2. **FVG Confluence**: Confirm overlapping FVG mitigation.\n"
-                        "3. **ICT Protected Stop Loss**: Lock SL strictly behind the structural **ICT Protected High/Low** fractal.\n"
-                        "4. **High-Probability Take Profit (TP)**: Do not place TP on immediate protected highs/lows. Target the **next major external liquidity pool (BSL/SSL)** to guarantee a **strict minimum 2.0R ratio**. If the setup does not yield at least 2.0R cleanly, output Verdict as WAIT.\n\n"
-                        "Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers for easy copy-pasting. Keep the Reason brief (1-2 short sentences):\n"
+                        "3. **Realistic Tight Stop Loss**: Lock SL tightly behind the immediate local structural swing fractal relative to the current execution price.\n"
+                        "4. **Realistic Proportional Take Profit (TP)**: Target the next major external liquidity pool (BSL/SSL) to guarantee a **strict minimum 2.0R ratio** with tight, realistic risk bounds. If insufficient, output Verdict as WAIT.\n\n"
+                        "Output ONLY these exact bullet points concisely. Format SL and TP as clean numeric price values matching the chart scale precisely. Keep the Reason brief (1-2 short sentences):\n"
                         "- **Bias**: [BULLISH / BEARISH]\n"
                         "- **Verdict**: [BUY / SELL / WAIT]\n"
                         "- **Confidence**: [High / Medium / Low with % e.g., High (85%)]\n"
                         "- **Target R:R**: [2.0R or higher]\n"
-                        "- **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]\n"
-                        "- **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]\n"
-                        "- **Reason**: [1-2 short sentences: cross-TF EMA trend, equilibrium check, FVG touch, protected swing SL, and next external liquidity target TP]."
+                        "- **Stop Loss (SL)**: [Exact numeric price only, matching chart scale]\n"
+                        "- **Take Profit (TP)**: [Exact numeric price only, matching chart scale]\n"
+                        "- **Reason**: [1-2 short sentences: cross-TF EMA trend, equilibrium check, tight structural SL, and realistic liquidity target TP]."
                     )
 
                     result_text = analyze_chart(images=optimized_images, prompt=prompt)
