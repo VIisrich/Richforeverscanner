@@ -260,17 +260,17 @@ def analyze_chart(images: list, prompt: str) -> str:
     
     messages = [{"role": "user", "content": content_list}]
     
+    # Configured with Claude Haiku 4.5 as the primary vision model via OpenRouter
     models_to_try = [
+        "anthropic/claude-haiku-4.5",
         "anthropic/claude-3.5-sonnet",
-        "google/gemini-2.5-flash",
-        "google/gemini-2.5-flash-preview",
-        "google/gemini-flash-1.5"
+        "google/gemini-2.5-flash"
     ]
     
     last_exception = None
     for model_name in models_to_try:
         try:
-            st.toast("Analyzing via RichforeverAI Engine...", icon="⚡")
+            st.toast(f"Analyzing via Claude Vision ({model_name})...", icon="⚡")
             response = client.chat.completions.create(
                 model=model_name,
                 messages=messages
@@ -370,7 +370,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER ENGINE: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by RichforeverAI Core")
+st.sidebar.caption("⚡ Powered by Claude Haiku 4.5 & RichforeverAI")
 st.sidebar.markdown("""
 <div style="font-size: 0.73rem; color: #8a8f9d; line-height: 1.4; margin-top: 0.8rem; padding: 0.4rem 0;">
     <b>Risk Disclaimer:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical charting tool. Past performance does not guarantee future results. By using this software, you agree to our Terms of Service and use this tool entirely at your own risk.
@@ -391,7 +391,7 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>📊 Automated Technical Processing</h4>
-            <p>Process single and multi-timeframe charts seamlessly using advanced computer vision models, institutional price action frameworks, and ICT protected swing placement.</p>
+            <p>Process single and multi-timeframe charts seamlessly using Claude Haiku 4.5 vision, institutional price action frameworks, and ICT protected swing placement.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
@@ -425,7 +425,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom notes / Asset name (e.g., NAS100 or XAUUSD):", value="NAS100")
 
         if st.button("RUN TECHNICAL SCAN"):
-            with st.spinner("Analyzing chart parameters..."):
+            with st.spinner("Analyzing chart parameters via Claude Haiku 4.5..."):
                 try:
                     prompt = f"""
                     You are an expert ICT quantitative technical analyst. Analyze this chart strictly using professional market structure rules:
@@ -478,7 +478,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Cross-examining multi-timeframe feeds..."):
+            with st.spinner("Cross-examining multi-timeframe feeds via Claude Haiku 4.5..."):
                 try:
                     prompt = """
                     You are an expert multi-timeframe ICT technical analyst. Cross-examine these chart captures using strict multi-horizon rules:
