@@ -265,14 +265,15 @@ def analyze_chart(images: list, prompt: str) -> str:
         "google/gemini-2.5-flash",
         "anthropic/claude-haiku-4.5"
     ]
-    
+        
     last_exception = None
     for model_name in models_to_try:
         try:
             st.toast("Processing chart via RichforeverAI Vision...", icon="⚡")
             response = client.chat.completions.create(
                 model=model_name,
-                messages=messages
+                messages=messages,
+                temperature=0.0
             )
             if response and response.choices and response.choices[0].message.content:
                 return response.choices[0].message.content
