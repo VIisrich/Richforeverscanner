@@ -260,17 +260,17 @@ def analyze_chart(images: list, prompt: str) -> str:
     
     messages = [{"role": "user", "content": content_list}]
     
-    # Configured with Claude Haiku 4.5 as the primary vision model via OpenRouter
+    # Configured with top-tier vision models via OpenRouter
     models_to_try = [
-        "anthropic/claude-haiku-4.5",
         "anthropic/claude-3.5-sonnet",
-        "google/gemini-2.5-flash"
+        "google/gemini-2.5-flash",
+        "anthropic/claude-haiku-4.5"
     ]
     
     last_exception = None
     for model_name in models_to_try:
         try:
-            st.toast(f"Analyzing via Claude Vision ({model_name})...", icon="⚡")
+            st.toast("Processing chart via RichforeverAI Vision...", icon="⚡")
             response = client.chat.completions.create(
                 model=model_name,
                 messages=messages
@@ -283,7 +283,7 @@ def analyze_chart(images: list, prompt: str) -> str:
                 continue
             raise e
             
-    raise Exception(f"All scanner nodes currently busy. Details: {last_exception}")
+    raise Exception(f"All RichforeverAI scanner nodes currently busy. Details: {last_exception}")
 
 # ==============================================================================
 # PARSING & BANNER RENDERING
@@ -370,7 +370,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER ENGINE: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by Claude Haiku 4.5 & RichforeverAI")
+st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
 st.sidebar.markdown("""
 <div style="font-size: 0.73rem; color: #8a8f9d; line-height: 1.4; margin-top: 0.8rem; padding: 0.4rem 0;">
     <b>Risk Disclaimer:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical charting tool. Past performance does not guarantee future results. By using this software, you agree to our Terms of Service and use this tool entirely at your own risk.
@@ -391,15 +391,15 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>📊 Automated Technical Processing</h4>
-            <p>Process single and multi-timeframe charts seamlessly using Claude Haiku 4.5 vision, institutional price action frameworks, and ICT protected swing placement.</p>
+            <p>Process single and multi-timeframe charts seamlessly using RichforeverAI vision, institutional price action frameworks, and ICT protected swing placement.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Scan execution charts instantly for structural confirmation, ICT protected high/low stop losses, and realistic nearest FVG/liquidity targets.</p>
+            <p>Scan execution charts instantly for structural confirmation, strict minimum 2.0R targets, ICT protected high/low stop losses, and FVG mitigation.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
-            <p>Cross-examine multi-timeframe market feeds for structural alignment, fractal zone testing, and high-probability setup verification.</p>
+            <p>Cross-examine multi-timeframe market feeds for structural alignment, 1H EMA trend bias, 15M equilibrium zone filtering, and high-probability setup verification.</p>
         </div>
         <div class="rf-disclaimer-card">
             <b>⚠️ Terms of Service & Legal Notice:</b> Trading involves substantial risk of loss. RichforeverAI is an analytical tool provided strictly for educational and informational purposes. The creator accepts zero liability for any financial or trading losses incurred.
@@ -425,15 +425,15 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom notes / Asset name (e.g., NAS100 or XAUUSD):", value="NAS100")
 
         if st.button("RUN TECHNICAL SCAN"):
-            with st.spinner("Analyzing chart parameters via Claude Haiku 4.5..."):
+            with st.spinner("Analyzing chart parameters via RichforeverAI Engine..."):
                 try:
                     prompt = f"""
-                    You are an expert ICT quantitative technical analyst. Analyze this chart strictly using the exact rules of the RichforeverAI backtest engine:
+                    You are an expert ICT quantitative technical analyst for the RichforeverAI system. Analyze this chart strictly using the exact rules of the RichforeverAI quantitative engine:
                     1. **1H EMA Trend Bias**: Check trend orientation relative to the 20 EMA (Bullish: price above EMA 20 and rising; Bearish: price below EMA 20 and falling).
                     2. **15M Equilibrium Zone Filter**: Determine the midpoint equilibrium (High + Low / 2). Bearish setups require price to be in the **Premium zone** (above equilibrium); Bullish setups require price to be in the **Discount zone** (below equilibrium).
                     3. **FVG Mitigation**: Confirm if price is actively mitigating a valid Fair Value Gap (FVG).
                     4. **ICT Protected Stop Loss (SL)**: Place the stop loss strictly behind the nearest **ICT Protected High/Low** swing fractal.
-                    5. **Target R:R**: Target the nearest structural liquidity pool (BSL/SSL) or FVG with a minimum 2.0R ratio.
+                    5. **Strict Target R:R ($\ge 2.0R$ Required)**: Target structural liquidity pools (BSL/SSL) or FVG targets such that the reward-to-risk ratio is **strictly 2.0R or higher**. Never output a negative or low R:R trade (< 2.0R); if the setup does not offer at least 2.0R, output Verdict as WAIT.
 
                     Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers so they are easy to copy and paste. Keep the Reason brief (1-2 short sentences):
                     - **Bias**: [BULLISH / BEARISH]
@@ -478,14 +478,14 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Cross-examining multi-timeframe feeds via Claude Haiku 4.5..."):
+            with st.spinner("Cross-examining multi-timeframe feeds via RichforeverAI Engine..."):
                 try:
                     prompt = """
-                    You are an expert multi-timeframe ICT quantitative analyst. Cross-examine these chart captures into ONE unified trade plan matching the backtest bot rules (do not break down by individual timeframes):
+                    You are an expert multi-timeframe ICT quantitative analyst for the RichforeverAI system. Cross-examine these chart captures into ONE unified trade plan matching the RichforeverAI backtest engine rules (do not break down by individual timeframes):
                     1. **1H EMA Bias & 15M Equilibrium**: Verify 1H EMA trend alignment and ensure price is in the correct Premium (for bearish) or Discount (for bullish) equilibrium zone.
                     2. **FVG Confluence**: Confirm overlapping FVG mitigation.
                     3. **ICT Protected Stop Loss**: Lock SL strictly behind the structural **ICT Protected High/Low** fractal.
-                    4. **Take Profit**: Target clean structural BSL/SSL pools with a minimum 2.0R ratio.
+                    4. **Strict Target R:R ($\ge 2.0R$ Required)**: Target clean structural BSL/SSL pools with a **strict minimum 2.0R ratio**. Never output a negative or sub-2.0R trade; if the reward-to-risk ratio is insufficient, output Verdict as WAIT.
 
                     Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers for easy copy-pasting. Keep the Reason brief (1-2 short sentences):
                     - **Bias**: [BULLISH / BEARISH]
