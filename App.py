@@ -435,14 +435,14 @@ elif page == "Single-Shot Analysis":
                     4. **ICT Protected Stop Loss (SL)**: Place stop loss strictly beyond the nearest **ICT Protected High** (for shorts) or **Protected Low** (for longs)—the fractal pivot point guarding the market structure boundary—plus a clean volatility buffer.
                     5. **Tight Take Profit (TP)**: Minimum R:R >= 1.5 (capped cleanly between 1.5R and 2.0R). Target the **nearest structural pool or M15 FVG/mitigation zone** rather than distant wishful extensions.
 
-                    Output ONLY these exact bullet points concisely, with no extra paragraphs:
+                    Output ONLY these exact bullet points concisely, using short and simple sentences (no long paragraphs). For the Reason bullet, directly state what to expect and what to wait for:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [1.5R - 2.0R or N/A]
                     - **Stop Loss (SL)**: [Exact Price - placed behind ICT Protected High/Low]
                     - **Take Profit (TP)**: [Exact Price - nearest FVG/pool]
-                    - **Reason**: [Concise technical rationale: state trend bias, zone position, ICT protected pivot SL placement, and nearest realistic target].
+                    - **Reason**: [1-2 short sentences: state current market action, what to expect, and what exact trigger/zone to wait for].
                     
                     Asset / User Notes: {user_query}
                     """
@@ -487,14 +487,14 @@ elif page == "Multi-Timeframe Confluence":
                     3. **Lower TF Confluence**: Check for overlapping zone mitigations and triggers.
                     4. **ICT Protected SL & Tight TPs**: Stop loss placed strictly beyond the nearest **ICT Protected High/Low** fractal structural pivot. Take profit targeting the nearest structural liquidity pool / FVG with a controlled 1.5R to 2.0R cap.
 
-                    Output ONLY these exact bullet points concisely:
+                    Output ONLY these exact bullet points concisely, using short and simple sentences (no long paragraphs). For the Reason bullet, explicitly state what to expect and what to wait for:
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
                     - **Target R:R**: [1.5R - 2.0R or N/A]
                     - **Stop Loss (SL)**: [Exact Price - behind ICT Protected High/Low]
                     - **Take Profit (TP)**: [Exact Price - nearest FVG/pool]
-                    - **Reason**: [Concise cross-TF rationale: higher TF bias + zone position + ICT protected SL placement + nearest realistic target].
+                    - **Reason**: [1-2 short sentences: state cross-TF alignment, what to expect, and what exact trigger or zone to wait for].
                     """
 
                     result_text = analyze_chart(images=optimized_images, prompt=prompt)
