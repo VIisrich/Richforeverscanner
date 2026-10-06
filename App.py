@@ -260,7 +260,6 @@ def analyze_chart(images: list, prompt: str) -> str:
     
     messages = [{"role": "user", "content": content_list}]
     
-    # Configured with top-tier vision models via OpenRouter
     models_to_try = [
         "anthropic/claude-3.5-sonnet",
         "google/gemini-2.5-flash",
@@ -395,7 +394,7 @@ if page == "Home / Dashboard":
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
-            <p>Scan execution charts instantly for structural confirmation, strict minimum 2.0R targets, ICT protected high/low stop losses, and FVG mitigation.</p>
+            <p>Scan execution charts instantly for structural confirmation, ICT protected high/low stop losses, next high-probability liquidity targets, and FVG mitigation.</p>
         </div>
         <div class="rf-card">
             <h4>🔄 Multi-Timeframe Confluence</h4>
@@ -433,7 +432,7 @@ elif page == "Single-Shot Analysis":
                     2. **15M Equilibrium Zone Filter**: Determine the midpoint equilibrium (High + Low / 2). Bearish setups require price to be in the **Premium zone** (above equilibrium); Bullish setups require price to be in the **Discount zone** (below equilibrium).
                     3. **FVG Mitigation**: Confirm if price is actively mitigating a valid Fair Value Gap (FVG).
                     4. **ICT Protected Stop Loss (SL)**: Place the stop loss strictly behind the nearest **ICT Protected High/Low** swing fractal.
-                    5. **Strict Target R:R ($\ge 2.0R$ Required)**: Target structural liquidity pools (BSL/SSL) or FVG targets such that the reward-to-risk ratio is **strictly 2.0R or higher**. Never output a negative or low R:R trade (< 2.0R); if the setup does not offer at least 2.0R, output Verdict as WAIT.
+                    5. **High-Probability Take Profit (TP)**: Never place TP directly at a protected high/low (since those are liquidity pools). Target the **next high-probability external liquidity pool or major liquidity target** beyond the immediate structure to ensure a **strict minimum 2.0R ratio**. If $\ge 2.0R$ is not achievable, output Verdict as WAIT.
 
                     Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers so they are easy to copy and paste. Keep the Reason brief (1-2 short sentences):
                     - **Bias**: [BULLISH / BEARISH]
@@ -442,7 +441,7 @@ elif page == "Single-Shot Analysis":
                     - **Target R:R**: [2.0R or higher]
                     - **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]
                     - **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]
-                    - **Reason**: [1-2 short sentences: state EMA trend, equilibrium zone check, FVG mitigation, and protected swing level].
+                    - **Reason**: [1-2 short sentences: state EMA trend, equilibrium check, FVG mitigation, protected swing SL, and next liquidity pool TP target].
                     
                     Asset / User Notes: {user_query}
                     """
@@ -485,22 +484,10 @@ elif page == "Multi-Timeframe Confluence":
                     1. **1H EMA Bias & 15M Equilibrium**: Verify 1H EMA trend alignment and ensure price is in the correct Premium (for bearish) or Discount (for bullish) equilibrium zone.
                     2. **FVG Confluence**: Confirm overlapping FVG mitigation.
                     3. **ICT Protected Stop Loss**: Lock SL strictly behind the structural **ICT Protected High/Low** fractal.
-                    4. **Strict Target R:R ($\ge 2.0R$ Required)**: Target clean structural BSL/SSL pools with a **strict minimum 2.0R ratio**. Never output a negative or sub-2.0R trade; if the reward-to-risk ratio is insufficient, output Verdict as WAIT.
+                    4. **High-Probability Take Profit (TP)**: Do not place TP on immediate protected highs/lows. Target the **next major external liquidity pool (BSL/SSL)** to guarantee a **strict minimum 2.0R ratio**. If the setup does not yield at least 2.0R cleanly, output Verdict as WAIT.
 
                     Output ONLY these exact bullet points concisely. Format SL and TP as clean plain numbers for easy copy-pasting. Keep the Reason brief (1-2 short sentences):
                     - **Bias**: [BULLISH / BEARISH]
                     - **Verdict**: [BUY / SELL / WAIT]
                     - **Confidence**: [High / Medium / Low with % e.g., High (85%)]
-                    - **Target R:R**: [2.0R or higher]
-                    - **Stop Loss (SL)**: [Exact numeric price only, e.g. 30920]
-                    - **Take Profit (TP)**: [Exact numeric price only, e.g. 30750]
-                    - **Reason**: [1-2 short sentences: cross-TF EMA trend, equilibrium check, FVG touch, and protected swing level].
-                    """
-
-                    result_text = analyze_chart(images=optimized_images, prompt=prompt)
-                    st.markdown("### 🌐 Multi-TF Confluence Report")
-                    st.success("Multi-scan complete")
-                    render_verdict_banner(result_text)
-                    st.markdown(result_text)
-                except Exception as e:
-                    st.error(f"⚠️ {e}")
+                    - **Target R
