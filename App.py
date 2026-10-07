@@ -263,7 +263,7 @@ def analyze_chart(images: list, prompt: str) -> str:
     try:
         st.toast("Processing chart via RichforeverAI Engine...", icon="⚡")
         response = client.chat.completions.create(
-            model="anthropic/claude-haiku-4.5",
+            model="google/gemini-2.5-flash",
             messages=messages,
             temperature=0.0
         )
