@@ -260,30 +260,19 @@ def analyze_chart(images: list, prompt: str) -> str:
     
     messages = [{"role": "user", "content": content_list}]
     
-    models_to_try = [
-        "anthropic/claude-3.5-sonnet",
-        "google/gemini-2.5-flash",
-        "anthropic/claude-haiku-4.5"
-    ]
+    try:
+        st.toast("Processing chart via RichforeverAI (Claude Haiku)...", icon="⚡")
+        response = client.chat.completions.create(
+            model="anthropic/claude-haiku-4.5",
+            messages=messages,
+            temperature=0.0
+        )
+        if response and response.choices and response.choices[0].message.content:
+            return response.choices[0].message.content
+    except Exception as e:
+        raise Exception(f"RichforeverAI scanner error: {e}")
         
-    last_exception = None
-    for model_name in models_to_try:
-        try:
-            st.toast("Processing chart via RichforeverAI Vision...", icon="⚡")
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=messages,
-                temperature=0.0
-            )
-            if response and response.choices and response.choices[0].message.content:
-                return response.choices[0].message.content
-        except Exception as e:
-            last_exception = e
-            if "503" in str(e) or "UNAVAILABLE" in str(e) or "NOT_FOUND" in str(e) or "404" in str(e) or "rate_limit" in str(e):
-                continue
-            raise e
-            
-    raise Exception(f"All RichforeverAI scanner nodes currently busy. Details: {last_exception}")
+    raise Exception("RichforeverAI scanner returned empty response.")
 
 # ==============================================================================
 # PARSING & BANNER RENDERING
@@ -370,7 +359,7 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER ENGINE: ONLINE 🟢</div>", unsafe_allow_html=True)
-st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
+st.sidebar.caption("⚡ Powered by Claude Haiku & RichforeverAI")
 st.sidebar.markdown("""
 <div style="font-size: 0.73rem; color: #8a8f9d; line-height: 1.4; margin-top: 0.8rem; padding: 0.4rem 0;">
     <b>Risk Disclaimer:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical charting tool. Past performance does not guarantee future results. By using this software, you agree to our Terms of Service and use this tool entirely at your own risk.
@@ -391,7 +380,7 @@ if page == "Home / Dashboard":
     st.markdown("""
         <div class="rf-card">
             <h4>📊 Automated Technical Processing</h4>
-            <p>Process single and multi-timeframe charts seamlessly using RichforeverAI vision, institutional price action frameworks, and tight structural risk models.</p>
+            <p>Process single and multi-timeframe charts seamlessly using Claude Haiku vision, institutional price action frameworks, and tight structural risk models.</p>
         </div>
         <div class="rf-card">
             <h4>📸 Single-Shot Analysis</h4>
@@ -425,7 +414,7 @@ elif page == "Single-Shot Analysis":
         user_query = st.text_input("Custom notes / Asset name (e.g., NAS100 or XAUUSD):", value="NAS100")
 
         if st.button("RUN TECHNICAL SCAN"):
-            with st.spinner("Analyzing chart parameters via RichforeverAI Engine..."):
+            with st.spinner("Analyzing chart parameters via Claude Haiku..."):
                 try:
                     prompt = (
                         "You are an expert ICT quantitative technical analyst for the RichforeverAI system. Analyze this chart strictly using exact institutional price action rules:\n"
@@ -476,7 +465,7 @@ elif page == "Multi-Timeframe Confluence":
                 st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
-            with st.spinner("Cross-examining multi-timeframe feeds via RichforeverAI Engine..."):
+            with st.spinner("Cross-examining multi-timeframe feeds via Claude Haiku..."):
                 try:
                     prompt = (
                         "You are an expert multi-timeframe ICT quantitative analyst for the RichforeverAI system. Cross-examine these chart captures into ONE unified trade plan:\n"
