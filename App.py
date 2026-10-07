@@ -219,104 +219,104 @@ st.markdown(f"""
 # OPENROUTER API CLIENT & VISION ENGINE
 # ==============================================================================
 def get_openrouter_client():
-    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))[cite: 2]
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
     return OpenAI(
-        base_url="https://openrouter.ai/api/v1",[cite: 2]
-        api_key=api_key,[cite: 2]
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
     )
 
 def load_and_optimize_image(uploaded_file):
-    img = Image.open(uploaded_file)[cite: 2]
-    img.thumbnail((800, 800))[cite: 2]
-    if img.mode != "RGB":[cite: 2]
-        if img.mode == "RGBA":[cite: 2]
-            rgb_img = Image.new("RGB", img.size, (255, 255, 255))[cite: 2]
-            rgb_img.paste(img, mask=img.split()[3])[cite: 2]
-            img = rgb_img[cite: 2]
+    img = Image.open(uploaded_file)
+    img.thumbnail((800, 800))
+    if img.mode != "RGB":
+        if img.mode == "RGBA":
+            rgb_img = Image.new("RGB", img.size, (255, 255, 255))
+            rgb_img.paste(img, mask=img.split()[3])
+            img = rgb_img
         else:
-            img = img.convert("RGB")[cite: 2]
-    return img[cite: 2]
+            img = img.convert("RGB")
+    return img
 
 def pil_image_to_base64_data_uri(img: Image.Image) -> str:
-    buffered = io.BytesIO()[cite: 2]
-    img.save(buffered, format="JPEG")[cite: 2]
-    encoded = base64.b64encode(buffered.getvalue()).decode("utf-8")[cite: 2]
-    return f"data:image/jpeg;base64,{encoded}"[cite: 2]
+    buffered = io.BytesIO()
+    img.save(buffered, format="JPEG")
+    encoded = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    return f"data:image/jpeg;base64,{encoded}"
 
 def analyze_chart(images: list, prompt: str) -> str:
-    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))[cite: 2]
-    if not api_key:[cite: 2]
-        raise RuntimeError("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")[cite: 2]
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
+    if not api_key:
+        raise RuntimeError("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
 
-    client = get_openrouter_client()[cite: 2]
+    client = get_openrouter_client()
     
-    content_list = [{"type": "text", "text": prompt}][cite: 2]
-    for img in images:[cite: 2]
-        data_uri = pil_image_to_base64_data_uri(img)[cite: 2]
-        content_list.append({[cite: 2]
-            "type": "image_url",[cite: 2]
-            "image_url": {"url": data_uri}[cite: 2]
-        })[cite: 2]
+    content_list = [{"type": "text", "text": prompt}]
+    for img in images:
+        data_uri = pil_image_to_base64_data_uri(img)
+        content_list.append({
+            "type": "image_url",
+            "image_url": {"url": data_uri}
+        })
     
-    messages = [{"role": "user", "content": content_list}][cite: 2]
+    messages = [{"role": "user", "content": content_list}]
     
     try:
-        st.toast("Processing chart via RichforeverAI Engine...", icon="⚡")[cite: 2]
-        response = client.chat.completions.create([cite: 2]
-            model="anthropic/claude-haiku-4.5",[cite: 2]
-            messages=messages,[cite: 2]
-            temperature=0.0[cite: 2]
+        st.toast("Processing chart via RichforeverAI Engine...", icon="⚡")
+        response = client.chat.completions.create(
+            model="anthropic/claude-haiku-4.5",
+            messages=messages,
+            temperature=0.0
         )
-        if response and response.choices and response.choices[0].message.content:[cite: 2]
-            return response.choices[0].message.content[cite: 2]
-    except Exception as e:[cite: 2]
-        raise Exception(f"RichforeverAI scanner error: {e}")[cite: 2]
+        if response and response.choices and response.choices[0].message.content:
+            return response.choices[0].message.content
+    except Exception as e:
+        raise Exception(f"RichforeverAI scanner error: {e}")
         
-    raise Exception("RichforeverAI scanner returned empty response.")[cite: 2]
+    raise Exception("RichforeverAI scanner returned empty response.")
 
 # ==============================================================================
 # PARSING & BANNER RENDERING
 # ==============================================================================
 def extract_bias(text: str):
-    match = re.search(r"bias[^\n]{0,50}?\b(BULLISH|BEARISH)\b", text, re.IGNORECASE)[cite: 2]
-    if not match:[cite: 2]
-        match = re.search(r"\b(BULLISH|BEARISH)\b", text, re.IGNORECASE)[cite: 2]
-    return match.group(1).upper() if match else None[cite: 2]
+    match = re.search(r"bias[^\n]{0,50}?\b(BULLISH|BEARISH)\b", text, re.IGNORECASE)
+    if not match:
+        match = re.search(r"\b(BULLISH|BEARISH)\b", text, re.IGNORECASE)
+    return match.group(1).upper() if match else None
 
 def extract_verdict(text: str):
-    match = re.search(r"verdict[^\n]{0,80}?\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)[cite: 2]
-    if not match:[cite: 2]
-        match = re.search(r"\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)[cite: 2]
-    return match.group(1).upper() if match else None[cite: 2]
+    match = re.search(r"verdict[^\n]{0,80}?\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
+    if not match:
+        match = re.search(r"\b(BUY|SELL|WAIT)\b", text, re.IGNORECASE)
+    return match.group(1).upper() if match else None
 
 def extract_level(text: str, keyword_pattern: str):
-    match = re.search(rf"{keyword_pattern}[^:\n]*:\s*\*{{0,2}}([^\n*]+)", text, re.IGNORECASE)[cite: 2]
-    if not match:[cite: 2]
+    match = re.search(rf"{keyword_pattern}[^:\n]*:\s*\*{{0,2}}([^\n*]+)", text, re.IGNORECASE)
+    if not match:
         return None
-    value = match.group(1).strip(" *_-")[cite: 2]
-    if not value or value.upper() in ("N/A", "NA", "NONE"):[cite: 2]
+    value = match.group(1).strip(" *_-")
+    if not value or value.upper() in ("N/A", "NA", "NONE"):
         return None
-    return value[cite: 2]
+    return value
 
 def render_verdict_banner(text: str):
-    bias = extract_bias(text)[cite: 2]
-    if bias:[cite: 2]
-        bias_class = "rf-bias-bullish" if bias == "BULLISH" else "rf-bias-bearish"[cite: 2]
-        bias_icon = "📈" if bias == "BULLISH" else "📉"[cite: 2]
+    bias = extract_bias(text)
+    if bias:
+        bias_class = "rf-bias-bullish" if bias == "BULLISH" else "rf-bias-bearish"
+        bias_icon = "📈" if bias == "BULLISH" else "📉"
         st.markdown(f"""
             <div style="text-align: center;">
                 <span class="rf-bias-pill {bias_class}">{bias_icon} BIAS: {bias}</span>
             </div>
-        """, unsafe_allow_html=True)[cite: 2]
+        """, unsafe_allow_html=True)
 
-    verdict = extract_verdict(text)[cite: 2]
-    if not verdict:[cite: 2]
+    verdict = extract_verdict(text)
+    if not verdict:
         return
 
     config = {
-        "BUY":  {"color": "#2ecc71", "bg": "rgba(46, 204, 113, 0.16)",  "border": "rgba(46, 204, 113, 0.60)",  "icon": "🟢", "label": "BUY",  "sub": "ENTER LONG"},[cite: 2]
-        "SELL": {"color": "#ff3b3b", "bg": "rgba(255, 59, 59, 0.16)",   "border": "rgba(255, 59, 59, 0.60)",   "icon": "🔴", "label": "SELL", "sub": "ENTER SHORT"},[cite: 2]
-        "WAIT": {"color": "#9a9fb5", "bg": "rgba(154, 159, 181, 0.14)", "border": "rgba(154, 159, 181, 0.45)", "icon": "⚪", "label": "WAIT", "sub": "NO SETUP YET"},[cite: 2]
+        "BUY":  {"color": "#2ecc71", "bg": "rgba(46, 204, 113, 0.16)",  "border": "rgba(46, 204, 113, 0.60)",  "icon": "🟢", "label": "BUY",  "sub": "ENTER LONG"},
+        "SELL": {"color": "#ff3b3b", "bg": "rgba(255, 59, 59, 0.16)",   "border": "rgba(255, 59, 59, 0.60)",   "icon": "🔴", "label": "SELL", "sub": "ENTER SHORT"},
+        "WAIT": {"color": "#9a9fb5", "bg": "rgba(154, 159, 181, 0.14)", "border": "rgba(154, 159, 181, 0.45)", "icon": "⚪", "label": "WAIT", "sub": "NO SETUP YET"},
     }[verdict]
 
     st.markdown(f"""
@@ -328,43 +328,43 @@ def render_verdict_banner(text: str):
             <span class="rf-verdict-icon">{config['icon']}</span>
             <span>{config['label']}<span class="rf-verdict-sub">{config['sub']}</span></span>
         </div>
-    """, unsafe_allow_html=True)[cite: 2]
+    """, unsafe_allow_html=True)
 
     if verdict in ("BUY", "SELL"):
-        sl = extract_level(text, r"stop\s*loss(?:\s*\(sl\))?")[cite: 2]
-        tp = extract_level(text, r"take\s*profit(?:\s*\(tp\))?")[cite: 2]
-        if sl or tp:[cite: 2]
+        sl = extract_level(text, r"stop\s*loss(?:\s*\(sl\))?")
+        tp = extract_level(text, r"take\s*profit(?:\s*\(tp\))?")
+        if sl or tp:
             sl_html = f"""
                 <div class="rf-level-card rf-level-sl">
                     <div class="rf-level-label">🛑 STOP LOSS</div>
                     <div class="rf-level-value">{sl or '—'}</div>
-                </div>""" if sl else ""[cite: 2]
+                </div>""" if sl else ""
             tp_html = f"""
                 <div class="rf-level-card rf-level-tp">
                     <div class="rf-level-label">🎯 TAKE PROFIT</div>
                     <div class="rf-level-value">{tp or '—'}</div>
-                </div>""" if tp else ""[cite: 2]
-            st.markdown(f"""<div class="rf-levels-row">{sl_html}{tp_html}</div>""", unsafe_allow_html=True)[cite: 2]
+                </div>""" if tp else ""
+            st.markdown(f"""<div class="rf-levels-row">{sl_html}{tp_html}</div>""", unsafe_allow_html=True)
 
 # ==============================================================================
 # SIDEBAR NAVIGATION & LEGAL FOOTER
 # ==============================================================================
-st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)[cite: 2]
+st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</span></div>", unsafe_allow_html=True)
 
 page = st.sidebar.radio(
     "Navigation",
     ["Home / Dashboard", "Single-Shot Analysis", "Multi-Timeframe Confluence"],
     label_visibility="collapsed"
-)[cite: 2]
+)
 
-st.sidebar.markdown("---")[cite: 2]
-st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER ENGINE: ONLINE 🟢</div>", unsafe_allow_html=True)[cite: 2]
-st.sidebar.caption("⚡ Powered by RichforeverAI Engine")[cite: 2]
+st.sidebar.markdown("---")
+st.sidebar.markdown("<div class='rf-pill rf-pill-online'>SCANNER ENGINE: ONLINE 🟢</div>", unsafe_allow_html=True)
+st.sidebar.caption("⚡ Powered by RichforeverAI Engine")
 st.sidebar.markdown("""
 <div style="font-size: 0.73rem; color: #8a8f9d; line-height: 1.4; margin-top: 0.8rem; padding: 0.4rem 0;">
     <b>Risk Disclaimer:</b> Trading involves substantial risk of loss and is not suitable for every investor. RichforeverAI is an educational and analytical charting tool. Past performance does not guarantee future results. By using this software, you agree to our Terms of Service and use this tool entirely at your own risk.
 </div>
-""", unsafe_allow_html=True)[cite: 2]
+""", unsafe_allow_html=True)
 
 # ==============================================================================
 # PAGE 1: HOME / DASHBOARD
@@ -375,7 +375,7 @@ if page == "Home / Dashboard":
             <h1>⚡ RICHFOREVER AI</h1>
             <p>Advanced Technical Chart Scanner Suite</p>
         </div>
-    """, unsafe_allow_html=True)[cite: 2]
+    """, unsafe_allow_html=True)
 
     st.markdown("""
         <div class="rf-card">
@@ -393,7 +393,7 @@ if page == "Home / Dashboard":
         <div class="rf-disclaimer-card">
             <b>⚠️ Terms of Service & Legal Notice:</b> Trading involves substantial risk of loss. RichforeverAI is an analytical tool provided strictly for educational and informational purposes. The creator accepts zero liability for any financial or trading losses incurred.
         </div>
-    """, unsafe_allow_html=True)[cite: 2]
+    """, unsafe_allow_html=True)
 
 # ==============================================================================
 # PAGE 2: SINGLE-SHOT ANALYSIS
@@ -404,14 +404,14 @@ elif page == "Single-Shot Analysis":
             <h1>📸 Single Chart Technical Scanner</h1>
             <p>Precise Entry & Realistic Intraday Risk Management</p>
         </div>
-    """, unsafe_allow_html=True)[cite: 2]
+    """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])[cite: 2]
+    uploaded_file = st.file_uploader("Upload chart screenshot...", type=["png", "jpg", "jpeg"])
 
     if uploaded_file is not None:
-        image = load_and_optimize_image(uploaded_file)[cite: 2]
-        st.image(image, caption="Optimized Chart Feed", use_container_width=True)[cite: 2]
-        user_query = st.text_input("Custom notes / Asset name (e.g., NAS100 or XAUUSD):", value="NAS100")[cite: 2]
+        image = load_and_optimize_image(uploaded_file)
+        st.image(image, caption="Optimized Chart Feed", use_container_width=True)
+        user_query = st.text_input("Custom notes / Asset name (e.g., NAS100 or XAUUSD):", value="NAS100")
 
         if st.button("RUN TECHNICAL SCAN"):
             with st.spinner("Analyzing chart parameters via RichforeverAI Engine..."):
@@ -436,13 +436,13 @@ elif page == "Single-Shot Analysis":
                         f"Asset / User Notes: {user_query}"
                     )
 
-                    result_text = analyze_chart(images=[image], prompt=prompt)[cite: 2]
-                    st.markdown("### 📊 Technical Scan Report")[cite: 2]
-                    st.success("Scan complete")[cite: 2]
-                    render_verdict_banner(result_text)[cite: 2]
-                    st.markdown(result_text)[cite: 2]
+                    result_text = analyze_chart(images=[image], prompt=prompt)
+                    st.markdown("### 📊 Technical Scan Report")
+                    st.success("Scan complete")
+                    render_verdict_banner(result_text)
+                    st.markdown(result_text)
                 except Exception as e:
-                    st.error(f"⚠️ {e}")[cite: 2]
+                    st.error(f"⚠️ {e}")
 
 # ==============================================================================
 # PAGE 3: MULTI-TIMEFRAME CONFLUENCE
@@ -453,18 +453,18 @@ elif page == "Multi-Timeframe Confluence":
             <h1>🔄 Multi-Timeframe Confluence Scan</h1>
             <p>Unified ICT Trade Plan & Clean Price Levels</p>
         </div>
-    """, unsafe_allow_html=True)[cite: 2]
+    """, unsafe_allow_html=True)
 
-    uploaded_files = st.file_uploader("Upload multi-timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)[cite: 2]
+    uploaded_files = st.file_uploader("Upload multi-timeframe charts...", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
     if uploaded_files:
-        cols = st.columns(min(len(uploaded_files), 3))[cite: 2]
-        optimized_images = [][cite: 2]
-        for i, f in enumerate(uploaded_files):[cite: 2]
-            opt_img = load_and_optimize_image(f)[cite: 2]
-            optimized_images.append(opt_img)[cite: 2]
-            with cols[i % len(cols)]:[cite: 2]
-                st.image(opt_img, caption=f.name, use_container_width=True)[cite: 2]
+        cols = st.columns(min(len(uploaded_files), 3))
+        optimized_images = []
+        for i, f in enumerate(uploaded_files):
+            opt_img = load_and_optimize_image(f)
+            optimized_images.append(opt_img)
+            with cols[i % len(cols)]:
+                st.image(opt_img, caption=f.name, use_container_width=True)
 
         if st.button("RUN MULTI-TF CONFLUENCE SCAN"):
             with st.spinner("Cross-examining multi-timeframe feeds via RichforeverAI Engine..."):
@@ -487,10 +487,10 @@ elif page == "Multi-Timeframe Confluence":
                         "- **Reason**: [1-2 short sentences: cross-TF EMA trend, equilibrium check, tight structural SL, and liquidity target TP with achieved R:R]."
                     )
 
-                    result_text = analyze_chart(images=optimized_images, prompt=prompt)[cite: 2]
-                    st.markdown("### 🌐 Multi-TF Confluence Report")[cite: 2]
-                    st.success("Multi-scan complete")[cite: 2]
-                    render_verdict_banner(result_text)[cite: 2]
-                    st.markdown(result_text)[cite: 2]
+                    result_text = analyze_chart(images=optimized_images, prompt=prompt)
+                    st.markdown("### 🌐 Multi-TF Confluence Report")
+                    st.success("Multi-scan complete")
+                    render_verdict_banner(result_text)
+                    st.markdown(result_text)
                 except Exception as e:
-                    st.error(f"⚠️ {e}")[cite: 2]
+                    st.error(f"⚠️ {e}")
