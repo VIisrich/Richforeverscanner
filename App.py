@@ -243,6 +243,23 @@ def pil_image_to_base64_data_uri(img: Image.Image) -> str:
     encoded = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return f"data:image/jpeg;base64,{encoded}"
 
+def analyze_text_model(prompt: str) -> str:
+    api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
+    if not api_key:
+        raise RuntimeError("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your Streamlit secrets.")
+    client = get_openrouter_client()
+    try:
+        response = client.chat.completions.create(
+            model="anthropic/claude-haiku-4.5",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0
+        )
+        if response and response.choices and response.choices[0].message.content:
+            return response.choices[0].message.content
+    except Exception as e:
+        raise Exception(f"RichforeverAI text error: {e}")
+    return "Failed to fetch market overview."
+
 def analyze_chart(images: list, prompt: str) -> str:
     api_key = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
     if not api_key:
@@ -263,7 +280,7 @@ def analyze_chart(images: list, prompt: str) -> str:
     try:
         st.toast("Processing chart via RichforeverAI Engine...", icon="⚡")
         response = client.chat.completions.create(
-            model="google/gemini-2.5-flash",
+            model="anthropic/claude-haiku-4.5",
             messages=messages,
             temperature=0.0
         )
@@ -353,7 +370,7 @@ st.sidebar.markdown("<div class='rf-sidebar-brand'>⚡ <span>RICHFOREVER AI</spa
 
 page = st.sidebar.radio(
     "Navigation",
-    ["Home / Dashboard", "Single-Shot Analysis", "Multi-Timeframe Confluence"],
+    ["Home / Dashboard", "Fundamentals & Outlook", "Single-Shot Analysis", "Multi-Timeframe Confluence"],
     label_visibility="collapsed"
 )
 
@@ -379,6 +396,10 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
+            <h4>🌐 Fundamentals & Market Outlook</h4>
+            <p>Get instant AI-driven macro updates telling you what's happening globally, what to expect, and the current fundamental market bias in simple terms.</p>
+        </div>
+        <div class="rf-card">
             <h4>📊 Automated Technical Processing</h4>
             <p>Process single and multi-timeframe charts seamlessly using RichforeverAI vision, institutional price action frameworks, and tight structural risk models.</p>
         </div>
@@ -396,7 +417,68 @@ if page == "Home / Dashboard":
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# PAGE 2: SINGLE-SHOT ANALYSIS
+# PAGE 2: FUNDAMENTALS & MARKET OUTLOOK
+# ==============================================================================
+elif page == "Fundamentals & Outlook":
+    st.markdown("""
+        <div class="rf-hero">
+            <h1>🌐 Fundamentals & Market Outlook</h1>
+            <p>Simple Macro Breakdown & High-Volatility News Radar</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        asset_choice = st.selectbox("Select Asset / Market Focus:", ["NAS100 (Nasdaq 100)", "XAUUSD (Gold)", "EURUSD (Forex)"])
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        fetch_btn = st.button("FETCH MACRO & NEWS")
+
+    if fetch_btn or "macro_loaded" not in st.session_state:
+        st.session_state["macro_loaded"] = True
+        with st.spinner("Analyzing macro environment and volatility news via RichforeverAI Engine..."):
+            try:
+                macro_prompt = (
+                    "You are an elite institutional macroeconomic strategist for multimodal systems. "
+                    "Provide a clean, structured fundamental market breakdown for " + asset_choice + " in late 2026.\n\n"
+                    "Format your output strictly using these sections with markdown headers:\n"
+                    "### 🌍 Core Macro Drivers\n"
+                    "[1-2 concise sentences on current inflation, yields, or tech sector sentiment]\n\n"
+                    "### ⚡ High-Impact Volatility Alerts\n"
+                    "List 2 critical upcoming/recent news events (e.g., CPI, PPI, Fed Speeches, Retail Sales) formatted using bullet points like: \n"
+                    "- **[EVENT NAME]** ([IMPACT LEVEL: HIGH / MEDIUM]) - [1 sentence on expected market shock to the asset]\n\n"
+                    "### 🎯 Institutional Market Bias\n"
+                    "[State clearly: BULLISH, BEARISH, or NEUTRAL with a 1-sentence plain-English justification]"
+                )
+                st.session_state["macro_data"] = analyze_text_model(macro_prompt)
+            except Exception as e:
+                st.session_state["macro_data"] = f"⚠️ Error fetching macro feed: {e}"
+
+    if "macro_data" in st.session_state:
+        st.markdown("""
+            <style>
+            .news-alert-card {
+                background: linear-gradient(135deg, rgba(255, 59, 59, 0.08), rgba(255, 157, 92, 0.05));
+                border: 1px solid rgba(255, 59, 59, 0.3);
+                border-left: 4px solid #ff3b3b;
+                border-radius: 12px;
+                padding: 1rem 1.2rem;
+                margin-bottom: 1rem;
+                color: #eef0f6;
+            }
+            .news-alert-card b { color: #ff6a6a; }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("### 📊 Live Macro & Volatility Intelligence")
+        st.markdown(f"""
+            <div class="rf-card">
+                {st.session_state["macro_data"]}
+            </div>
+        """, unsafe_allow_html=True)
+
+# ==============================================================================
+# PAGE 3: SINGLE-SHOT ANALYSIS
 # ==============================================================================
 elif page == "Single-Shot Analysis":
     st.markdown("""
@@ -445,7 +527,7 @@ elif page == "Single-Shot Analysis":
                     st.error(f"⚠️ {e}")
 
 # ==============================================================================
-# PAGE 3: MULTI-TIMEFRAME CONFLUENCE
+# PAGE 4: MULTI-TIMEFRAME CONFLUENCE
 # ==============================================================================
 elif page == "Multi-Timeframe Confluence":
     st.markdown("""
