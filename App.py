@@ -396,8 +396,8 @@ if page == "Home / Dashboard":
 
     st.markdown("""
         <div class="rf-card">
-            <h4>🌐 Fundamentals & Market Outlook</h4>
-            <p>Get instant AI-driven macro updates telling you what's happening globally, what to expect, and the current fundamental market bias in simple terms.</p>
+            <h4>🌐 NAS100 Daily/Weekly News & Outlook</h4>
+            <p>Get instant AI-driven updates on today's session, immediate high-volatility news catalysts, and clear daily/weekly directional bias.</p>
         </div>
         <div class="rf-card">
             <h4>📊 Automated Technical Processing</h4>
@@ -417,44 +417,36 @@ if page == "Home / Dashboard":
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# PAGE 2: FUNDAMENTALS & MARKET OUTLOOK
+# PAGE 2: FUNDAMENTALS & MARKET OUTLOOK (NAS100 DAILY / WEEKLY FOCUS)
 # ==============================================================================
 elif page == "Fundamentals & Outlook":
     st.markdown("""
         <div class="rf-hero">
-            <h1>🌐 Fundamentals & Market Outlook</h1>
-            <p>Simple Macro Breakdown & High-Volatility News Radar</p>
+            <h1>🌐 NAS100 Daily & Weekly Intelligence</h1>
+            <p>Immediate Session Catalysts & Directional Bias</p>
         </div>
     """, unsafe_allow_html=True)
 
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        asset_choice = st.selectbox("Select Asset / Market Focus:", ["NAS100 (Nasdaq 100)", "XAUUSD (Gold)", "EURUSD (Forex)"])
-    with col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        fetch_btn = st.button("FETCH MACRO & NEWS")
-
-    if fetch_btn or "macro_loaded" not in st.session_state:
-        st.session_state["macro_loaded"] = True
-        with st.spinner("Analyzing macro environment and volatility news via RichforeverAI Engine..."):
+    if st.button("FETCH TODAY & THIS WEEK'S NAS100 OUTLOOK"):
+        with st.spinner("Analyzing today's market drivers and volatility radar via RichforeverAI Engine..."):
             try:
                 macro_prompt = (
-                    "You are an elite institutional macroeconomic strategist for multimodal systems. "
-                    "Provide a clean, structured fundamental market breakdown for " + asset_choice + " in late 2026.\n\n"
-                    "Format your output strictly using these sections with markdown headers:\n"
-                    "### 🌍 Core Macro Drivers\n"
-                    "[1-2 concise sentences on current inflation, yields, or tech sector sentiment]\n\n"
-                    "### ⚡ High-Impact Volatility Alerts\n"
-                    "List 2 critical upcoming/recent news events (e.g., CPI, PPI, Fed Speeches, Retail Sales) formatted using bullet points like: \n"
-                    "- **[EVENT NAME]** ([IMPACT LEVEL: HIGH / MEDIUM]) - [1 sentence on expected market shock to the asset]\n\n"
-                    "### 🎯 Institutional Market Bias\n"
-                    "[State clearly: BULLISH, BEARISH, or NEUTRAL with a 1-sentence plain-English justification]"
+                    "You are an elite institutional equity strategist focusing specifically on the **Nasdaq 100 (NAS100)**. "
+                    "Provide a concise, highly specific breakdown of **today and this week's** market conditions (focusing on the current trading week of October 2026).\n\n"
+                    "Format your output strictly using these clean sections:\n"
+                    "### 📅 Today & This Week's Focus\n"
+                    "[1-2 short sentences summarizing what is driving tech price action right now, e.g., AI sector rotation, bond yield fluctuations, or chipmaker sentiment]\n\n"
+                    "### ⚡ High-Volatility News Alerts (Today / This Week)\n"
+                    "List 2 immediate high-impact economic or corporate news events for this week formatted using bullet points like: \n"
+                    "- **[EVENT NAME]** ([IMPACT LEVEL: HIGH / MEDIUM]) - [1 sentence on the expected intraday price shock for NAS100]\n\n"
+                    "### 🎯 Today's Expected Directional Bias\n"
+                    "[State clearly: BULLISH, BEARISH, or NEUTRAL with a 1-sentence plain-English justification on whether buyers or sellers have the upper hand today]"
                 )
-                st.session_state["macro_data"] = analyze_text_model(macro_prompt)
+                st.session_state["nas100_outlook"] = analyze_text_model(macro_prompt)
             except Exception as e:
-                st.session_state["macro_data"] = f"⚠️ Error fetching macro feed: {e}"
+                st.session_state["nas100_outlook"] = f"⚠️ Error fetching outlook: {e}"
 
-    if "macro_data" in st.session_state:
+    if "nas100_outlook" in st.session_state:
         st.markdown("""
             <style>
             .news-alert-card {
@@ -470,10 +462,11 @@ elif page == "Fundamentals & Outlook":
             </style>
         """, unsafe_allow_html=True)
         
-        st.markdown("### 📊 Live Macro & Volatility Intelligence")
+        st.markdown("### 📊 NAS100 Daily/Weekly Radar Report")
+        st.success("Sync complete")
         st.markdown(f"""
             <div class="rf-card">
-                {st.session_state["macro_data"]}
+                {st.session_state["nas100_outlook"]}
             </div>
         """, unsafe_allow_html=True)
 
